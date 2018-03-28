@@ -69,6 +69,7 @@
                 },
                 error: function (data) {
                     loading.hide();
+                    console.log(data.statusText);
                     $("ion-list").html("<h2 style='text-align:center'>not found</h2>");
                 }
             });

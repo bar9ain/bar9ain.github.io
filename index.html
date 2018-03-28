@@ -39,7 +39,7 @@
         window.onerror = function myErrorHandler(err, url, line) {
             $("ion-list").html("<h2 style='text-align:center'>" + err + line + "</h2>");
         };
-        
+
         $(document).ready(function () {
             searchParams = window.location.search;
             q = searchParams.split("=")[1];
@@ -57,15 +57,17 @@
                     },
                     error: function (data) {
                         loading.hide();
+                        console.log(data.statusText);
                         $("ion-list").html("<h2 style='text-align:center'>not found</h2>");
                     }
                 })
             }
         });
-    
+
         $(".searchbar-input").change(function () {
             window.location.href = "?q=" + $("#searchBox").val();
         });
     </script>
 </body>
+
 </html>
