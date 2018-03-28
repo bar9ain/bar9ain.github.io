@@ -48,7 +48,7 @@
                 $("ion-list").append(loading);
                 loading.show();
                 $.ajax({
-                    url: "https://cors-proxy.htmldriven.com/?url=http://banhtv.com/tim-kiem.html?q=" + q,
+                    url: "http://cors-proxy.htmldriven.com/?url=http://banhtv.com/tim-kiem.html?q=" + q,
                     type: "GET",
                     success: function (data) {
                         var items = $(data.body).find(BanhTV.classTimKiem);

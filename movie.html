@@ -71,7 +71,7 @@
             url = BanhTV.domain + param.split("=")[1];
             console.log(url);
             $.ajax({
-                url: "https://cors-proxy.htmldriven.com/?url=" + url,
+                url: "http://cors-proxy.htmldriven.com/?url=" + url,
                 type: "GET",
                 success: function (result) {
                     var html = result.body;
