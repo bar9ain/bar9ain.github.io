@@ -48,7 +48,7 @@
             episodeId = url.substring(url.lastIndexOf("-") + 2);
             url = BanhTV.domain + url + ".html";
             $.ajax({
-                url: "http://cors-proxy.htmldriven.com/?url=" + url,
+                url: "https://cors-proxy.htmldriven.com/?url=" + url,
                 type: "GET",
                 success: function (data) {
                     html = data.body;
@@ -59,7 +59,7 @@
                     for (i = 0; i < videoButtons.length; i++) {
                         videoId = videoButtons.eq(i).data("index");
                         videoURL = "http://" + BanhTV.page + ".com/ajax/getLinkPlayer/id/" + episodeId + "/index/" + videoId;
-                        $.getJSON('http://cors-proxy.htmldriven.com/?url=' + videoURL,
+                        $.getJSON('https://cors-proxy.htmldriven.com/?url=' + videoURL,
                             function (result) {
                                 var sourceLinks = $.parseJSON(result.body).sourceLinks;
                                 BanhTV.getVideos(sourceLinks);
