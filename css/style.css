@@ -1,0 +1,244 @@
+@import url('https://fonts.googleapis.com/css?family=Maven+Pro:400,500,700,900&subset=latin-ext,vietnamese');
+
+html, body {
+	font-family: "Maven Pro";
+	background: #EFF3F4;
+}
+
+a {
+    text-decoration: none;
+    color: #696969;
+}
+
+.navbar-item img {
+	max-height: 100px;
+}
+
+.features {
+	padding-top: 5rem;
+}
+
+.is-background {
+	background-image: url('../img/background2.jpg');
+	background-size: cover;
+	background-position: center;
+}
+
+.is-background .title {
+	font-size: 60px;
+}
+
+.is-background .title,
+.is-background .subtitle {
+	color: white;
+	font-weight: bold;
+	text-transform: uppercase;
+	text-align: right;
+}
+
+.card-image img {
+	max-height: 320px;
+}
+
+.is-shady {
+	animation: flyintoright .4s backwards;
+	background: #fff;
+	box-shadow: rgba(0, 0, 0, .1) 0 1px 0;
+	border-radius: 4px;
+	display: inline-block;
+	margin: 10px;
+	position: relative;
+	transition: all .2s ease-in-out;
+}
+
+.is-shady:hover {
+	box-shadow: 0 10px 16px rgba(0, 0, 0, .13), 0 6px 6px rgba(0, 0, 0, .19);
+}
+
+.product {
+	display: flex;
+	text-decoration: none !important;
+	position: relative;
+	border: 1px solid #d5d5d5;
+	z-index: 0;
+	-webkit-box-shadow: 0 0 18px 0 rgba(0,0,0,0.1);
+	box-shadow: 0 0 18px 0 rgba(0,0,0,0.1);
+	-webkit-transition: all 0.35s !important;
+	-moz-transition: all 0.35s !important;
+	-o-transition: all 0.35s !important;
+	transition: all 0.35s !important;
+	overflow: hidden;
+	margin: 0 0 20px;
+	padding: 0;
+	height: 260px;
+}
+
+.product .product-detail {
+	flex: 1;
+	padding: 20px 0 0 32px;
+	overflow: hidden;
+	background: white;
+	z-index: 2;
+}
+
+.product .product-detail h5 {
+	color: #444;
+	font-size: 18px;
+	font-weight: bold;
+	text-transform: uppercase;
+}
+
+.product:hover .product-detail h5 {
+	color: #fc4241;
+}
+
+.product .product-detail p {
+	color: #777;
+	margin: 0 0 11.5px;
+}
+
+.product .product-thumbnail {
+	height: 100%;
+	flex: 0 1 300px;
+	text-align: right;
+	position: relative;
+}
+
+.product .product-thumbnail img {
+	transition: all .75s ease;
+}
+
+.product:hover .product-thumbnail img {
+	transform: scale(1.15);
+}
+
+.product .product-thumbnail:before {
+	content: '';
+	position: absolute;
+	background-color: white;
+	width: 200px;
+	left: -120px;
+	top: -90px;
+	height: 125%;
+	transform: rotate(26deg);
+	z-index: 1;
+	box-shadow: 0 0 18px 0 rgba(0,0,0,0.1);
+}
+
+.product .product-thumbnail img {
+	height: 100%;
+	position: relative;
+	right: 0;
+	top: 0;
+	width: 100%;
+	object-fit: cover;
+}
+
+.shop-button {
+	padding: 10px 30px;
+	font-size: 17px;
+	font-weight: 600;
+	background: #f23534;
+	text-transform: uppercase;
+	color: #fff;
+	display: inline-block;
+	-webkit-transition: all 0.35s;
+	-moz-transition: all 0.35s;
+	-o-transition: all 0.35s;
+	transition: all 0.35s;
+	border: none;
+	outline: none;
+	box-shadow: none;
+	cursor: pointer;
+}
+
+.shop-button:hover {
+	background: #1c1c1c;
+}
+
+.footer {
+	background: #ddd;
+}
+
+.footer h4 {
+    font-size: 23px;
+    font-weight: 800;
+    text-transform: uppercase;
+    margin: 0 0 15px 0;
+}
+
+.follow_box li strong {
+    font-size: 17px;
+    font-weight: 600;
+    text-transform: uppercase;
+    color: #333;
+    display: block;
+}
+
+.follow_box .extra-wrap {
+	display: inline-block;
+    margin-left: 10px;
+    margin-bottom: 10px;
+}
+
+.follow_box li em {
+    font-size: 27px;
+    font-style: normal;
+    font-weight: bold;
+}
+
+.footer {
+	padding: 40px 0;
+	margin-top: 40px;
+}
+
+.footer .item_s {
+    display: block;
+    height: 35px;
+    line-height: 16px;
+    margin-bottom: 10px;
+}
+
+.footer .item_s em {
+    width: 32px;
+    height: 32px;
+    display: inline-block;
+    float: left;
+    margin-right: 10px;
+    text-align: center;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.footer .item_s span {
+    display: block;
+    color: #9b9b9b;
+    margin-top: 2px;
+}
+
+.footer a:hover {
+    color: #b79c7f;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.at-icon {
+    fill: #fff;
+    border: 0;
+}
+
+.fb {
+    background-color: rgb(59, 89, 152);
+}
+
+.tw {
+	background-color: rgb(29, 161, 242);
+}
+
+.gg {
+    background-color: rgb(220, 78, 65);
+}
+
+.ytb {
+    background-color: rgb(203, 32, 39);
+}
