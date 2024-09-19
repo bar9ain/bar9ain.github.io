@@ -96,7 +96,7 @@
             @click="openLink(movie)"
             @contextmenu.prevent="removeMovie(movie)"
           />
-          <div class="card-body" @click="iframeSrc = movie.moveek_url">
+          <div class="card-body" @click.stop="iframeSrc = movie.moveek_url">
             <div class="card-title fw-bold">{{movie.title}}</div>
             <div class="d-flex justify-content-between align-items-center">
               <div class="card-text small text-muted">
@@ -106,10 +106,15 @@
                 <template v-else>{{movie.year}}</template>
               </div>
               <template v-if="movie.video_url">
-                <i
+                <a
                   v-if="movie.video_url.endsWith('m3u8')"
-                  class="fi fi-br-high-definition h5 mb-0 text-primary"
-                ></i>
+                  :href="`https://m3u8play.dev/?url=${movie.video_url}`"
+                  target="_blank"
+                  style="text-decoration: none"
+                  @click.stop
+                >
+                  <i class="fi fi-br-high-definition h5 mb-0 text-primary"></i>
+                </a>
                 <img v-else :src="getFavicon(movie.video_url)" />
               </template>
             </div>
