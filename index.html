@@ -13,7 +13,7 @@
       crossorigin="anonymous"
     />
   </head>
-  <body>
+  <body class="bg-dark">
     <div id="app">
       <div
         class="container d-flex align-items-center p-3 justify-content-center border-bottom"
@@ -54,8 +54,8 @@
         >
           <img class="card-img-top" :src="movie.image" />
           <div class="card-body">
-            <h5 class="card-title">{{movie.title}}</h5>
-            <p class="card-text text-muted">{{movie.release_date}}</p>
+            <div class="card-title fw-bold">{{movie.title}}</div>
+            <div class="card-text small text-muted">{{movie.release_date}}</div>
           </div>
         </div>
       </div>
@@ -101,6 +101,28 @@
 
           function openLink(movie) {
             movie.video_url && (window.location.href = movie.video_url);
+            if (window.location.hostname === "localhost") {
+              const url = window.prompt(
+                "Enter movie URL",
+                movie.video_url || ""
+              );
+              if (url && url !== movie.video_url) {
+                updateVideoUrl(movie.id, url);
+              }
+            }
+          }
+
+          async function updateVideoUrl(movieId, url) {
+            const { error } = await client
+              .from("cinema")
+              .update({ video_url: url })
+              .eq("id", movieId);
+
+            if (error) {
+              return alert(error);
+            }
+
+            fetchMovies();
           }
 
           onMounted(() => {
