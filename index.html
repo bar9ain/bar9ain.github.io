@@ -76,8 +76,17 @@
           <img class="card-img-top" :src="movie.image" />
           <div class="card-body">
             <div class="card-title fw-bold">{{movie.title}}</div>
-            <div class="card-text small text-muted">
-              {{movie.release_date.split("-")[2]}}/{{movie.release_date.split("-")[1]}}
+            <div class="d-flex justify-content-between align-items-center">
+              <div class="card-text small text-muted">
+                {{movie.release_date.split("-")[2]}}/{{movie.release_date.split("-")[1]}}
+              </div>
+              <template v-if="movie.video_url">
+                <i
+                  v-if="movie.video_url.endsWith('m3u8')"
+                  class="fi fi-br-high-definition h5 mb-0 text-primary"
+                ></i>
+                <img v-else :src="getFavicon(movie.video_url)" />
+              </template>
             </div>
           </div>
         </div>
@@ -185,6 +194,12 @@
             }
           }
 
+          function getFavicon(url) {
+            return `http://www.google.com/s2/favicons?domain=${encodeURIComponent(
+              url.replace("www.", "")
+            )}&sz=16`;
+          }
+
           onMounted(() => {
             fetchMovies();
           });
@@ -197,6 +212,7 @@
             openLink,
             search,
             removeMovie,
+            getFavicon,
           };
         },
       }).mount("#app");
