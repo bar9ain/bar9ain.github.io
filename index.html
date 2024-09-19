@@ -28,6 +28,25 @@
       rel="stylesheet"
       href="https://cdn-uicons.flaticon.com/uicons-bold-rounded/css/uicons-bold-rounded.css"
     />
+
+    <style>
+      .iframe iframe {
+        position: fixed;
+        top: 5%;
+        left: 5%;
+        width: 90%;
+        height: 90%;
+      }
+
+      .iframe .background {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.626);
+      }
+    </style>
   </head>
   <body class="bg-dark">
     <div id="app">
@@ -69,12 +88,15 @@
           v-for="movie in filteredMovies"
           :key="movie.id"
           :style="{'filter': movie.video_url ? '':'grayscale(1)'}"
-          :role="movie.video_url ? 'button':''"
-          @click="openLink(movie)"
-          @contextmenu.prevent="removeMovie(movie)"
         >
-          <img class="card-img-top" :src="movie.image" />
-          <div class="card-body">
+          <img
+            class="card-img-top"
+            :src="movie.image"
+            :role="movie.video_url ? 'button':''"
+            @click="openLink(movie)"
+            @contextmenu.prevent="removeMovie(movie)"
+          />
+          <div class="card-body" @click="iframeSrc = movie.moveek_url">
             <div class="card-title fw-bold">{{movie.title}}</div>
             <div class="d-flex justify-content-between align-items-center">
               <div class="card-text small text-muted">
@@ -90,6 +112,11 @@
             </div>
           </div>
         </div>
+      </div>
+
+      <div v-if="iframeSrc" class="iframe">
+        <div class="background" @click="iframeSrc = null"></div>
+        <iframe :src="iframeSrc" @load="onIframeLoad"></iframe>
       </div>
     </div>
 
@@ -111,6 +138,7 @@
               linkedOnly.value ? !!x.video_url : true
             )
           );
+          const iframeSrc = ref(null);
 
           async function fetchMovies() {
             const date = new Date(month.value);
@@ -201,6 +229,10 @@
             )}&sz=16`;
           }
 
+          function onIframeLoad(e) {
+            console.log(e);
+          }
+
           onMounted(() => {
             fetchMovies();
           });
@@ -209,11 +241,13 @@
             filteredMovies,
             month,
             linkedOnly,
+            iframeSrc,
             fetchMovies,
             openLink,
             search,
             removeMovie,
             getFavicon,
+            onIframeLoad,
           };
         },
       }).mount("#app");
