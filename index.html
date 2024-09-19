@@ -71,6 +71,7 @@
           :style="{'filter': movie.video_url ? '':'grayscale(1)'}"
           :role="movie.video_url ? 'button':''"
           @click="openLink(movie)"
+          @contextmenu.prevent="removeMovie(movie)"
         >
           <img class="card-img-top" :src="movie.image" />
           <div class="card-body">
@@ -114,6 +115,7 @@
             const result = await client
               .from("cinema")
               .select("*")
+              .eq("hidden", false)
               .gte("release_date", firstDay)
               .lte("release_date", lastDay)
               .order("release_date");
@@ -158,10 +160,29 @@
             const result = await client
               .from("cinema")
               .select("*")
+              .eq("hidden", false)
               .ilike("romanized", `%${text}%`)
               .order("release_date", { ascending: false });
             console.log(result, result.data);
             movies.value = result.data;
+          }
+
+          async function removeMovie(movie) {
+            if (window.location.hostname !== "localhost") return;
+
+            const v = window.confirm("Delete this?");
+            if (v) {
+              const { error } = await client
+                .from("cinema")
+                .update({ hidden: true })
+                .eq("id", movie.id);
+
+              if (error) {
+                return alert(error.details);
+              }
+
+              fetchMovies();
+            }
           }
 
           onMounted(() => {
@@ -175,6 +196,7 @@
             fetchMovies,
             openLink,
             search,
+            removeMovie,
           };
         },
       }).mount("#app");
