@@ -1,11 +1,121 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Document</title>
-</head>
-<body>
-    <a href="https://dash.motchills.net/raw/410f6d61438ce56de4395502c1e33322/index.m3u8">Test</a>
-</body>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC"
+      crossorigin="anonymous"
+    />
+  </head>
+  <body>
+    <div id="app">
+      <div
+        class="container d-flex align-items-center p-3 justify-content-center border-bottom"
+      >
+        <div class="d-flex w-100 align-items-center">
+          <input
+            v-model="month"
+            type="month"
+            class="form-control me-2"
+            @change="fetchMovies"
+          />
+          <div class="form-check form-switch">
+            <input
+              v-model="linkedOnly"
+              class="form-check-input"
+              type="checkbox"
+              role="switch"
+              id="flexSwitchCheckDefault"
+            />
+            <label class="form-check-label" for="flexSwitchCheckDefault"
+              >HDOnly</label
+            >
+          </div>
+        </div>
+      </div>
+
+      <div
+        class="container p-3 d-grid gap-3"
+        style="grid-template-columns: repeat(auto-fill, minmax(150px, 1fr))"
+      >
+        <div
+          class="card"
+          v-for="movie in filteredMovies"
+          :key="movie.id"
+          :style="{'filter': movie.video_url ? '':'grayscale(1)'}"
+          :role="movie.video_url ? 'button':''"
+          @click="openLink(movie)"
+        >
+          <img class="card-img-top" :src="movie.image" />
+          <div class="card-body">
+            <h5 class="card-title">{{movie.title}}</h5>
+            <p class="card-text text-muted">{{movie.release_date}}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const { createClient } = supabase;
+      const client = createClient(
+        "https://oxcdjkfjxwbwjooheeqn.supabase.co",
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im94Y2Rqa2ZqeHdid2pvb2hlZXFuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjY3MjU5MzAsImV4cCI6MjA0MjMwMTkzMH0.SRQlvn5BUh_NEzjMIBfETZ6GHWMQM7udm58fLQKrExc"
+      );
+      const { createApp, ref, onMounted, computed } = Vue;
+
+      createApp({
+        setup() {
+          const movies = ref([]);
+          const month = ref(new Date().toISOString().substr(0, 7));
+          const linkedOnly = ref(false);
+          const filteredMovies = computed(() =>
+            movies.value.filter((x) =>
+              linkedOnly.value ? !!x.video_url : true
+            )
+          );
+
+          async function fetchMovies() {
+            const date = new Date(month.value);
+            const firstDay = new Date(date.getFullYear(), date.getMonth(), 1)
+              .toISOString()
+              .substr(0, 10);
+            const lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0)
+              .toISOString()
+              .substr(0, 10);
+
+            const result = await client
+              .from("cinema")
+              .select("*")
+              .gte("release_date", firstDay)
+              .lte("release_date", lastDay)
+              .order("release_date");
+            console.log(result, result.data);
+            movies.value = result.data;
+          }
+
+          function openLink(movie) {
+            movie.video_url && (window.location.href = movie.video_url);
+          }
+
+          onMounted(() => {
+            fetchMovies();
+          });
+
+          return {
+            filteredMovies,
+            month,
+            linkedOnly,
+            fetchMovies,
+            openLink,
+          };
+        },
+      }).mount("#app");
+    </script>
+  </body>
 </html>
