@@ -3,14 +3,30 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Document</title>
+    <title>V-Cine</title>
+    <link rel="icon" href="favicon.png" />
+
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/jsrmvi/dist/jsrmvi.min.js"></script>
+
     <link
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css"
       rel="stylesheet"
       integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC"
       crossorigin="anonymous"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn-uicons.flaticon.com/uicons-regular-rounded/css/uicons-regular-rounded.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn-uicons.flaticon.com/uicons-solid-rounded/css/uicons-solid-rounded.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn-uicons.flaticon.com/uicons-bold-rounded/css/uicons-bold-rounded.css"
     />
   </head>
   <body class="bg-dark">
@@ -33,10 +49,14 @@
               role="switch"
               id="flexSwitchCheckDefault"
             />
-            <label class="form-check-label" for="flexSwitchCheckDefault"
-              >HDOnly</label
-            >
+            <label
+              class="form-check-label"
+              for="flexSwitchCheckDefault"
+            ></label>
           </div>
+          <span class="p-2 text-white" @click="search">
+            <i class="fi fi-rr-search"></i>
+          </span>
         </div>
       </div>
 
@@ -121,10 +141,27 @@
               .eq("id", movieId);
 
             if (error) {
-              return alert(error);
+              return alert(error.details);
             }
 
             fetchMovies();
+          }
+
+          async function search() {
+            const text = jsrmvi.removeVI(window.prompt("Enter some texts"), {
+              concatBy: " ",
+            });
+            if (!text) {
+              return fetchMovies();
+            }
+
+            const result = await client
+              .from("cinema")
+              .select("*")
+              .ilike("romanized", `%${text}%`)
+              .order("release_date", { ascending: false });
+            console.log(result, result.data);
+            movies.value = result.data;
           }
 
           onMounted(() => {
@@ -137,6 +174,7 @@
             linkedOnly,
             fetchMovies,
             openLink,
+            search,
           };
         },
       }).mount("#app");

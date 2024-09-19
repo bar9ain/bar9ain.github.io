@@ -10,6 +10,7 @@
 // ==/UserScript==
 
 $.getScript("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2");
+$.getScript("https://unpkg.com/jsrmvi/dist/jsrmvi.min.js");
 
 setTimeout(() => {
 
@@ -31,6 +32,7 @@ setTimeout(() => {
         release_date: formatDate(x.querySelector(".text-muted").innerText.trim()),
         image: x.querySelector("img").src,
         moveek_url: x.querySelector("a[href*='/lich-chieu/'], a[href*='/phim/']").href.replace("lich-chieu", "phim"),
+        romanized: jsrmvi.removeVI(x.querySelector("a[href*='/lich-chieu/'], a[href*='/phim/']")?.title, {concatBy: ' '})
     }));
 
     window.insertMovies = async function() {
