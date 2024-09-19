@@ -55,7 +55,9 @@
           <img class="card-img-top" :src="movie.image" />
           <div class="card-body">
             <div class="card-title fw-bold">{{movie.title}}</div>
-            <div class="card-text small text-muted">{{movie.release_date}}</div>
+            <div class="card-text small text-muted">
+              {{movie.release_date.split("-")[2]}}/{{movie.release_date.split("-")[1]}}
+            </div>
           </div>
         </div>
       </div>
