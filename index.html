@@ -127,7 +127,8 @@
               .eq("hidden", false)
               .gte("release_date", firstDay)
               .lte("release_date", lastDay)
-              .order("release_date");
+              .order("release_date")
+              .order("id", { ascending: false });
             console.log(result, result.data);
             movies.value = result.data;
           }
