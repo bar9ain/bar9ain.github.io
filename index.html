@@ -108,7 +108,7 @@
               <template v-if="movie.video_url">
                 <a
                   v-if="movie.video_url.endsWith('m3u8') || movie.video_url.endsWith('raw')"
-                  :href="`https://m3u8play.dev/?url=${movie.video_url}`"
+                  :href="getPreviewLink(movie.video_url)"
                   target="_blank"
                   style="text-decoration: none"
                   @click.stop
@@ -131,7 +131,7 @@
 
       <div v-if="iframeSrc" class="iframe">
         <div class="background" @click="iframeSrc = null"></div>
-        <iframe :src="iframeSrc" @load="onIframeLoad"></iframe>
+        <iframe :src="iframeSrc"></iframe>
       </div>
     </div>
 
@@ -245,8 +245,10 @@
             )}&sz=16`;
           }
 
-          function onIframeLoad(e) {
-            console.log(e);
+          function getPreviewLink(url) {
+            const root = "https://m3u8play.dev/?url=";
+            const prefix = url.startsWith("/") ? window.location.href : "";
+            return `${root}${prefix}${url}`;
           }
 
           onMounted(() => {
@@ -263,7 +265,7 @@
             search,
             removeMovie,
             getFavicon,
-            onIframeLoad,
+            getPreviewLink,
           };
         },
       }).mount("#app");
