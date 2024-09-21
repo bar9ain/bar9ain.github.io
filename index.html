@@ -98,6 +98,13 @@
           />
           <div class="card-body" @click.stop="iframeSrc = movie.moveek_url">
             <div class="card-title fw-bold">{{movie.title}}</div>
+            <div
+              class="card-text small text-muted text-truncate"
+              v-if="movie.english"
+              :title="movie.english"
+            >
+              {{movie.english}}
+            </div>
             <div class="d-flex justify-content-between align-items-center">
               <div class="card-text small text-muted">
                 <template v-if="movie.release_date">
@@ -253,6 +260,11 @@
 
           onMounted(() => {
             fetchMovies();
+            window.addEventListener("keyup", (e) => {
+              if (e.keyCode === 27) {
+                iframeSrc.value = null;
+              }
+            });
           });
 
           return {
