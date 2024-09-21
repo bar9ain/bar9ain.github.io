@@ -129,7 +129,14 @@
                     class="fi fi-sr-clapperboard-play h5 mb-0 text-success"
                   ></i>
                 </a>
-                <img v-else :src="getFavicon(movie.video_url)" />
+                <a
+                  v-else
+                  :href="movie.video_url"
+                  target="_blank"
+                  style="text-decoration: none"
+                >
+                  <img :src="getFavicon(movie.video_url)" />
+                </a>
               </template>
             </div>
           </div>
