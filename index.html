@@ -115,7 +115,7 @@
               <template v-if="movie.video_url">
                 <a
                   v-if="movie.video_url.endsWith('m3u8') || movie.video_url.endsWith('raw')"
-                  :href="getPreviewLink(movie.video_url)"
+                  :href="resolveVideo(movie)"
                   target="_blank"
                   style="text-decoration: none"
                   @click.stop
@@ -134,6 +134,7 @@
                   :href="movie.video_url"
                   target="_blank"
                   style="text-decoration: none"
+                  @click.stop
                 >
                   <img :src="getFavicon(movie.video_url)" />
                 </a>
@@ -200,8 +201,37 @@
                 updateVideoUrl(movie.id, url);
               }
             } else {
-              movie.video_url && (window.location.href = movie.video_url);
+              window.location.href = resolveVideo(movie);
             }
+          }
+
+          function resolveVideo(video) {
+            const url =
+              (video.video_url.startsWith("/") ? window.location.href : "") +
+              video.video_url;
+
+            if (!url) return;
+
+            const uri = new URL(url);
+            const _url = `${uri.origin}${uri.pathname}`;
+
+            if (url.includes(".m3u")) {
+              if (navigator.userAgent.includes("iPhone")) {
+                return url;
+              }
+
+              return `https://www.hlsplayer.net/embed?type=m3u8&src=${_url}`;
+            }
+
+            if (url.includes("dashtype")) {
+              return `https://www.hlsplayer.net/embed?type=dash&src=${_url}`;
+            }
+
+            if (url.includes(".mp4")) {
+              return `https://www.hlsplayer.net/embed?type=mp4&src=${_url}`;
+            }
+
+            return url;
           }
 
           async function updateVideoUrl(movieId, url) {
@@ -259,12 +289,6 @@
             )}&sz=16`;
           }
 
-          function getPreviewLink(url) {
-            const root = "https://m3u8play.dev/?url=";
-            const prefix = url.startsWith("/") ? window.location.href : "";
-            return `${root}${prefix}${url}`;
-          }
-
           onMounted(() => {
             fetchMovies();
             window.addEventListener("keyup", (e) => {
@@ -284,7 +308,7 @@
             search,
             removeMovie,
             getFavicon,
-            getPreviewLink,
+            resolveVideo,
           };
         },
       }).mount("#app");
