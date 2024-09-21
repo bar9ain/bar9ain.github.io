@@ -12,28 +12,55 @@
       integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC"
       crossorigin="anonymous"
     />
+
+    <script src="https://cdn.rawgit.com/video-dev/hls.js/18bb552/dist/hls.min.js"></script>
+    <script src="https://cdn.plyr.io/3.7.8/plyr.js"></script>
+    <link rel="stylesheet" href="https://unpkg.com/plyr@3/dist/plyr.css" />
+
+    <style>
+      .plyr {
+        width: 100%;
+        height: 100%;
+      }
+
+      .plyr__captions .plyr__caption {
+        font-size: 5vh !important;
+      }
+    </style>
   </head>
   <body class="bg-dark">
     <div class="vw-100 vh-100 d-flex align-items-center">
-      <video
-        id="video"
-        controls
-        preload="metadata"
-        autoplay="true"
-        class="w-100 h-100"
-      >
-        <source
-          src="https://huggingface.co/datasets/gantertfeldt/fullHD/resolve/main/duong-ham-kho-loi-thoat.mp4"
-          type="video/mp4"
-        />
-        <track
-          label="Vietnamese"
-          kind="subtitles"
-          srclang="vi"
-          src="vtt/duong-ham-kho-loi-thoat.vtt"
-          default
-        />
-      </video>
+      <video autoplay controls></video>
     </div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const source = window.location.search.replace("?s=", "");
+        const video = document.querySelector("video");
+
+        const player = new Plyr(video, {
+          captions: { active: true, update: true, language: "auto" },
+        });
+
+        if (!Hls.isSupported()) {
+          video.src = source;
+        } else {
+          // For more Hls.js options, see https://github.com/dailymotion/hls.js
+          const hls = new Hls();
+          hls.loadSource(source);
+          hls.attachMedia(video);
+          window.hls = hls;
+
+          // Handle changing captions
+          player.on("languagechange", () => {
+            // Caption support is still flaky. See: https://github.com/sampotts/plyr/issues/994
+            setTimeout(() => (hls.subtitleTrack = player.currentTrack), 50);
+          });
+        }
+
+        // Expose player so it can be used from the console
+        window.player = player;
+      });
+    </script>
   </body>
 </html>
