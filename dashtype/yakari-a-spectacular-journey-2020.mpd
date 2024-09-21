@@ -736,7 +736,7 @@
     </AdaptationSet>
     <AdaptationSet mimeType="text/vtt" lang="en"> 
       <Representation id="caption" bandwidth="123">
-        <BaseURL>http://localhost:5500/vtt/yakari-a-spectacular-journey-2020.vtt</BaseURL>
+        <BaseURL>https://bar9ain.github.io/vtt/yakari-a-spectacular-journey-2020.vtt</BaseURL>
       </Representation>
     </AdaptationSet>
   </Period>
