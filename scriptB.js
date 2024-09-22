@@ -59,9 +59,29 @@ function initElements() {
   btnPhimmoi.outerHTML = `<a href="https://phimmoichill3.net/tim-kiem/${jsrmvi
     .removeVI(movieTitle, { concatBy: " " })
     .split(" ")
-    .slice(0, 3)
+    .slice(0, 4)
     .join("+")}/" class="btn btn-outline-light btn-sm" target="_blank">
     <img src="https://phimmoichill3.net/dev/images/logo.png" height="12">
+  </a>`;
+
+  const btnYeuphim = document.createElement("a");
+  toolbar.appendChild(btnYeuphim);
+  btnYeuphim.outerHTML = `<a href="https://yeuphim.cc/?search=${jsrmvi
+    .removeVI(movieTitle, { concatBy: " " })
+    .split(" ")
+    .slice(0, 4)
+    .join("+")}" class="btn btn-outline-light btn-sm" target="_blank">
+    <img src="https://yeuphim.cc/logo.png" height="12">
+  </a>`;
+
+  const btnAnime = document.createElement("a");
+  toolbar.appendChild(btnAnime);
+  btnAnime.outerHTML = `<a href="https://anime.com.co/search/${jsrmvi
+    .removeVI(movieTitle, { concatBy: " " })
+    .split(" ")
+    .slice(0, 4)
+    .join("+")}/" class="btn btn-outline-light btn-sm" target="_blank">
+    <img src="https://anime.com.co/wp-content/uploads/2024/07/anime-logo.png" height="12">
   </a>`;
 
   const btnTimkiem = document.createElement("a");
