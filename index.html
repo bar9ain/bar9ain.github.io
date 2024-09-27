@@ -69,15 +69,24 @@
         overflow: hidden;
       }
 
+      #contextmenu .dropdown-menu li {
+        display: flex;
+        align-items: center;
+        font-size: 80%;
+      }
+
       #contextmenu .dropdown-menu li a {
         padding: 2px 16px;
-        font-size: 80%;
         text-decoration: none;
         color: #333;
         display: flex;
         align-items: center;
         width: 100%;
         white-space: nowrap;
+      }
+
+      .dropdown-divider {
+        flex: 1;
       }
     </style>
   </head>
@@ -164,10 +173,14 @@
               role="menu"
               aria-labelledby="dropdownMenu"
             >
-              <li class="small px-2">{{movie.title}}</li>
+              <li class="small px-2 fw-bold">{{movie.title}}</li>
               <li><hr class="dropdown-divider" /></li>
               <li v-if="movie.moveek_url">
-                <a role="button" @click.prevent="iframeSrc = movie.moveek_url">
+                <a
+                  role="button"
+                  :href="movie.moveek_url"
+                  @click.prevent="iframeSrc = movie.moveek_url"
+                >
                   <img
                     src="https://cdn.moveek.com/favicon.png"
                     height="14"
@@ -176,8 +189,9 @@
                   Thông tin phim (Moveek)
                 </a>
               </li>
-              <li v-if="movie.imdb">
+              <li v-if="movie.imdb || isAdmin">
                 <a
+                  v-if="movie.imdb"
                   :href="`https://imdb.com/title/${movie.imdb}`"
                   target="_blank"
                 >
@@ -188,11 +202,19 @@
                   />
                   IMDB
                 </a>
+                <a v-else class="text-muted">IMDB</a>
+                <i
+                  v-if="isAdmin"
+                  role="button"
+                  class="fi fi-rr-edit ms-auto me-2"
+                  @click="updateProp('imdb', movie)"
+                ></i>
               </li>
               <li>
                 <a
                   v-if="movie.video_url"
                   :href="resolveVideo(movie)"
+                  class="text-truncate me-3"
                   target="_blank"
                 >
                   <img
@@ -211,11 +233,25 @@
                   </template>
                 </a>
                 <a v-else class="text-muted">Chưa có link xem</a>
+                <i
+                  v-if="isAdmin"
+                  role="button"
+                  class="fi fi-rr-edit ms-auto me-2"
+                  @click="updateProp('video_url', movie)"
+                ></i>
               </li>
-              <li><hr class="dropdown-divider" /></li>
-              <li><a href="#">Separated link</a></li>
-              <li><a href="#">Separated link</a></li>
-              <li><a href="#">Separated link</a></li>
+              <template v-if="isAdmin">
+                <li><hr class="dropdown-divider" /></li>
+                <li>
+                  <a
+                    role="button"
+                    class="text-danger"
+                    @click="removeMovie(movie)"
+                  >
+                    Xoá
+                  </a>
+                </li>
+              </template>
             </ul>
           </div>
         </div>
@@ -286,19 +322,9 @@
           }
 
           function openLink(movie) {
-            if (isAdmin.value) {
-              const url = window.prompt(
-                "Enter movie URL",
-                movie.video_url || ""
-              );
-              if (url && url !== movie.video_url) {
-                updateVideoUrl(movie.id, url);
-              }
-            } else {
-              const url = resolveVideo(movie);
-              if (!url) return;
-              window.open(url, "_blank");
-            }
+            const url = resolveVideo(movie);
+            if (!url) return;
+            window.open(url, "_blank");
           }
 
           function resolveVideo(video) {
@@ -328,19 +354,6 @@
             }
 
             return url;
-          }
-
-          async function updateVideoUrl(movieId, url) {
-            const { error } = await client
-              .from("cinema")
-              .update({ video_url: url })
-              .eq("id", movieId);
-
-            if (error) {
-              return alert(error.details);
-            }
-
-            fetchMovies();
           }
 
           async function search() {
@@ -396,17 +409,34 @@
               );
               menu.classList.add("d-block");
               if (clientX + 225 >= window.innerWidth) {
-                menu.style.left = `${window.innerWidth - x - 225}px`;
+                menu.style.left = `${window.innerWidth - x - 250}px`;
               } else {
                 menu.style.left = `${clientX - x}px`;
               }
 
-              if (clientY + 225 >= window.innerHeight) {
-                menu.style.top = `${window.innerHeight - y - 225}px`;
+              const menuHeight = menu.getBoundingClientRect().height;
+              if (clientY + menuHeight >= window.innerHeight) {
+                menu.style.top = `${window.innerHeight - y - menuHeight}px`;
               } else {
                 menu.style.top = `${clientY - y}px`;
               }
             }, 1);
+          }
+
+          async function updateProp(prop, movie) {
+            const value = window.prompt("Enter value:", movie[prop] || "");
+            if (value === null || value == movie[prop]) return;
+
+            const { error } = await client
+              .from("cinema")
+              .update({ [prop]: value })
+              .eq("id", movie.id);
+
+            if (error) {
+              return alert(error.details);
+            }
+
+            fetchMovies();
           }
 
           onMounted(async () => {
@@ -414,7 +444,7 @@
               return signIn();
             }
 
-            isAdmin.value = !!(await client.auth.getUser().data);
+            isAdmin.value = !!(await client.auth.getUser()).data;
 
             fetchMovies();
             window.addEventListener("keyup", (e) => {
@@ -444,6 +474,7 @@
             getFavicon,
             resolveVideo,
             showContext,
+            updateProp,
           };
         },
       }).mount("#app");
