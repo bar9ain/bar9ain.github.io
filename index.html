@@ -121,6 +121,15 @@
         </div>
       </div>
 
+      <div v-if="searchKeyword" class="text-center text-white pt-4">
+        Kết quả tìm kiếm cho: <i>{{searchKeyword}}</i>
+        <i
+          role="button"
+          class="fi fi-rr-circle-xmark text-danger ms-2"
+          @click="(searchKeyword = null), fetchMovies()"
+        ></i>
+      </div>
+
       <div
         class="container p-3 d-grid gap-3"
         style="grid-template-columns: repeat(auto-fill, minmax(150px, 1fr))"
@@ -134,7 +143,10 @@
             @click="openLink(movie)"
             @contextmenu.prevent="showContext($event, movie)"
           />
-          <div class="card-body" @click="isAdmin && (iframeSrc = movie.moveek_url)">
+          <div
+            class="card-body"
+            @click="isAdmin && (iframeSrc = movie.moveek_url)"
+          >
             <div class="card-title fw-bold">{{movie.title}}</div>
             <div
               class="card-text small text-muted text-truncate"
@@ -353,6 +365,7 @@
           const iframeSrc = ref(null);
           const isAdmin = ref(false);
           const contextMovieId = ref(null);
+          const searchKeyword = ref("");
 
           async function signIn() {
             const email = window.prompt("Enter email:");
@@ -370,6 +383,18 @@
           }
 
           async function fetchMovies() {
+            if (searchKeyword.value) {
+              const result = await client
+                .from("cinema")
+                .select("*, links (id, url, label)")
+                .eq("hidden", false)
+                .ilike("romanized", `%${searchKeyword.value}%`)
+                .limit(12)
+                .order("release_date", { ascending: false });
+              movies.value = result.data;
+              return;
+            }
+
             const date = new Date(month.value);
             const firstDay = new Date(date.getFullYear(), date.getMonth(), 1)
               .toISOString()
@@ -426,22 +451,14 @@
           }
 
           async function search() {
-            const text = jsrmvi.removeVI(window.prompt("Enter some texts"), {
+            const text = window.prompt("Enter some texts");
+            if (text === null) return;
+
+            searchKeyword.value = jsrmvi.removeVI(text, {
               concatBy: " ",
             });
-            if (!text) {
-              return fetchMovies();
-            }
 
-            const result = await client
-              .from("cinema")
-              .select("*")
-              .eq("hidden", false)
-              .ilike("romanized", `%${text}%`)
-              .limit(12)
-              .order("release_date", { ascending: false });
-            console.log(result, result.data);
-            movies.value = result.data;
+            fetchMovies();
           }
 
           async function removeMovie(movie) {
@@ -596,6 +613,7 @@
             iframeSrc,
             isAdmin,
             contextMovieId,
+            searchKeyword,
             fetchMovies,
             openLink,
             search,
