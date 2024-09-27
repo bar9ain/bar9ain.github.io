@@ -140,7 +140,7 @@
             class="card-img-top"
             :src="movie.image"
             :role="movie.video_url ? 'button':''"
-            :style="{'filter': movie.video_url ? '':'grayscale(1)'}"
+            :style="{'filter': (movie.video_url || movie.links.length) ? '':'grayscale(1)'}"
             @click="openLink(movie)"
             @contextmenu.prevent="showContext($event, movie)"
           />
