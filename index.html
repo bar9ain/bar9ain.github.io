@@ -134,7 +134,7 @@
             @click="openLink(movie)"
             @contextmenu.prevent="showContext($event, movie)"
           />
-          <div class="card-body">
+          <div class="card-body" @click="isAdmin && (iframeSrc = movie.moveek_url)">
             <div class="card-title fw-bold">{{movie.title}}</div>
             <div
               class="card-text small text-muted text-truncate"
@@ -240,6 +240,75 @@
                   @click="updateProp('video_url', movie)"
                 ></i>
               </li>
+              <template v-if="isAdmin || movie.links.length">
+                <li><hr class="dropdown-divider" /></li>
+                <li
+                  v-for="link in movie.links"
+                  :key="link.id"
+                  style="border-bottom: 1px dashed #ddd"
+                >
+                  <a :href="link.url" class="text-truncate" target="_blank">
+                    <img
+                      v-if="link.url.startsWith('magnet:')"
+                      src="./magnet.png"
+                      height="14"
+                      class="me-1"
+                    />
+                    <img
+                      v-else
+                      :src="getFavicon(link.url)"
+                      height="14"
+                      class="me-1"
+                    />
+                    {{link.label || getUrlDisplay(link.url)}}
+                  </a>
+                  <i
+                    v-if="isAdmin"
+                    role="button"
+                    class="fi fi-rr-edit ms-auto me-2"
+                    @click="updateLink(link)"
+                  ></i>
+                </li>
+                <li v-if="isAdmin">
+                  <a role="button" @click="addLink(movie.id)">Thêm link</a>
+                </li>
+                <li><hr class="dropdown-divider" /></li>
+                <li>
+                  <a
+                    v-if="movie.subs_link"
+                    :href="movie.subs_link"
+                    class="text-truncate me-3"
+                    target="_blank"
+                  >
+                    <img
+                      src="https://subsource.net/favicon-16x16.png"
+                      height="14"
+                      class="me-1"
+                    />
+                    Tìm phụ đề
+                  </a>
+                  <a
+                    v-else-if="movie.english"
+                    :href="`https://subsource.net/search/${encodeURIComponent(movie.english)}`"
+                    class="text-truncate me-3"
+                    target="_blank"
+                  >
+                    <img
+                      src="https://subsource.net/favicon-16x16.png"
+                      height="14"
+                      class="me-1"
+                    />
+                    Tìm phụ đề...
+                  </a>
+                  <a v-else class="text-muted">Chưa có phụ đề</a>
+                  <i
+                    v-if="isAdmin"
+                    role="button"
+                    class="fi fi-rr-edit ms-auto me-2"
+                    @click="updateProp('subs_link', movie)"
+                  ></i>
+                </li>
+              </template>
               <template v-if="isAdmin">
                 <li><hr class="dropdown-divider" /></li>
                 <li>
@@ -311,7 +380,7 @@
 
             const result = await client
               .from("cinema")
-              .select("*")
+              .select("*, links (id, url, label)")
               .eq("hidden", false)
               .gte("release_date", firstDay)
               .lte("release_date", lastDay)
@@ -394,9 +463,8 @@
           }
 
           function getFavicon(url) {
-            return `http://www.google.com/s2/favicons?domain=${encodeURIComponent(
-              url.replace("www.", "")
-            )}&sz=16`;
+            const uri = new URL(url).origin;
+            return `https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=${uri}&size=16`;
           }
 
           function showContext({ srcElement, clientX, clientY }, movie) {
@@ -439,12 +507,73 @@
             fetchMovies();
           }
 
+          function getUrlDisplay(url) {
+            if (url.startsWith("magnet:")) return "Magnet Link";
+
+            return new URL(url).hostname;
+          }
+
+          async function addLink(movie_id) {
+            const url = prompt("Add link:");
+            if (!url) return;
+
+            const label = prompt("Label:");
+
+            const { error } = await client
+              .from("links")
+              .insert({ movie_id, url, label });
+
+            if (error) {
+              return alert(error.details);
+            }
+
+            fetchMovies();
+          }
+
+          async function updateLink(link) {
+            const url = prompt("Update link:", link.url || "");
+            if (url === "") {
+              const yes = confirm("Delete this?");
+              if (yes) {
+                const { error } = await client
+                  .from("links")
+                  .delete()
+                  .eq("id", link.id);
+
+                if (error) {
+                  return alert(error.details);
+                }
+
+                fetchMovies();
+              }
+
+              return;
+            }
+
+            const label = prompt("Update label:", link.label || "");
+            if (url === null && label === null) return;
+
+            const { error } = await client
+              .from("links")
+              .update({
+                url: url || link.url,
+                label: label || link.label,
+              })
+              .eq("id", link.id);
+
+            if (error) {
+              return alert(error.details);
+            }
+
+            fetchMovies();
+          }
+
           onMounted(async () => {
             if (window.location.search === "?admin") {
               return signIn();
             }
 
-            isAdmin.value = !!(await client.auth.getUser()).data;
+            isAdmin.value = !!(await client.auth.getUser()).data.user;
 
             fetchMovies();
             window.addEventListener("keyup", (e) => {
@@ -475,6 +604,9 @@
             resolveVideo,
             showContext,
             updateProp,
+            getUrlDisplay,
+            addLink,
+            updateLink,
           };
         },
       }).mount("#app");
