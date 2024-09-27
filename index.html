@@ -160,6 +160,22 @@
             )
           );
           const iframeSrc = ref(null);
+          const isAdmin = ref(false);
+
+          async function signIn() {
+            const email = window.prompt("Enter email:");
+            if (!email) return;
+
+            const password = window.prompt("Enter password:");
+            if (!password) return;
+
+            try {
+              await client.auth.signInWithPassword({ email, password });
+              window.location.href = "/";
+            } catch {
+              alert("Login failed!");
+            }
+          }
 
           async function fetchMovies() {
             const date = new Date(month.value);
@@ -183,7 +199,7 @@
           }
 
           function openLink(movie) {
-            if (window.location.hostname === "localhost") {
+            if (isAdmin.value) {
               const url = window.prompt(
                 "Enter movie URL",
                 movie.video_url || ""
@@ -197,11 +213,11 @@
           }
 
           function resolveVideo(video) {
+            if (!video.video_url) return "#";
+
             const url =
               (video.video_url.startsWith("/") ? window.location.href : "") +
               video.video_url;
-
-            if (!url) return;
 
             const uri = new URL(url);
             const _url = `${uri.origin}${uri.pathname}`;
@@ -257,7 +273,7 @@
           }
 
           async function removeMovie(movie) {
-            if (window.location.hostname !== "localhost") return;
+            if (!isAdmin.value) return;
 
             const v = window.confirm("Delete this?");
             if (v) {
@@ -280,7 +296,13 @@
             )}&sz=16`;
           }
 
-          onMounted(() => {
+          onMounted(async () => {
+            if (window.location.search === "?admin") {
+              return signIn();
+            }
+
+            isAdmin.value = !!(await client.auth.getUser().data);
+
             fetchMovies();
             window.addEventListener("keyup", (e) => {
               if (e.keyCode === 27) {
@@ -294,6 +316,7 @@
             month,
             linkedOnly,
             iframeSrc,
+            isAdmin,
             fetchMovies,
             openLink,
             search,
