@@ -5,9 +5,11 @@
   "author": "bar9ain <bar9ain@gmail.com>",
   "license": "MIT",
   "scripts": {
-    "crawl": "node --env-file=.env crawler.js"
+    "crawl": "node --env-file=.env crawler.js",
+    "fetch": "node --env-file=.env import.js"
   },
   "dependencies": {
-    "@supabase/supabase-js": "^2.45.4"
+    "@supabase/supabase-js": "^2.45.4",
+    "cheerio": "^1.0.0"
   }
 }

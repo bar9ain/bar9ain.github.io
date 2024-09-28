@@ -1,4 +1,6 @@
 const supabaseJs = require("@supabase/supabase-js");
+const cheerio = require("cheerio");
+const fs = require("node:fs");
 
 const supabase = supabaseJs.createClient(
   process.env.DB_URL,
@@ -23,6 +25,7 @@ async function execute() {
   if (params.includes("imdb")) fetchImdb(imdbMovies);
   if (params.includes("sub")) fetchSub(imdbMovies);
   if (params.includes("check")) checkMovies(imdbMovies);
+  if (params.includes("search")) findImdb(movies);
 }
 
 function login() {
@@ -79,17 +82,19 @@ async function fetchImdb(movies) {
   }).then((r) => r.json());
 
   for await (const [i, m] of r.data.titles.entries()) {
-    await supabase
+    const { error } = await supabase
       .from("cinema")
       .update({
         english: m.primary_title,
         year: m.start_year,
-        rate: m.rating?.aggregate_rating || "N/A",
+        rate: m.rating?.aggregate_rating,
         genres: m.genres,
         countries: m.origin_countries,
       })
       .eq("imdb", m.id)
       .select();
+
+    if (error) console.log(error.message || "", error.details);
 
     printProgress("Fetch IMDB...", i + 1, r.data.titles.length);
   }
@@ -120,9 +125,58 @@ async function fetchSub(movies) {
   }
 }
 
+async function findImdb(movies) {
+  const list = movies.filter((x) => !x.imdb);
+  const output = [];
+  for await (const [i, movie] of list.entries()) {
+    const title = movie.english
+      ? [movie.english, movie.year].join(" ")
+      : movie.title;
+    const r = await googleSearch(
+      `${title} imdb`,
+      `a[href^='/url?q=https://www.imdb.com/title/']`
+    );
+    output.push({ id: movie.id, title: movie.title, imdb: r });
+    printProgress("Finding IMDB...", i + 1, list.length);
+  }
+
+  fs.writeFile("./fetch.json", JSON.stringify(output), (err) => {
+    if (err) console.error(err);
+  });
+}
+
+async function googleSearch(text, pattern) {
+  const url = `https://www.google.com/search?q=${encodeURIComponent(text)}`;
+  const response = await fetch(url);
+  const body = await response.text();
+  const $ = cheerio.load(body);
+
+  const result = [];
+
+  $(pattern).each((i, title) => {
+    const titleNode = $(title);
+    const titleText = titleNode.text();
+    const titleUrl = new URL(
+      titleNode.attr("href").replace("/url?q=", "")
+    ).pathname.split("/")[2];
+
+    if (titleText.includes("› title"))
+      result.push({
+        imdb: titleUrl,
+        text: titleText,
+        url:
+          "https://www.imdb.com/" +
+          new URL(
+            titleNode.attr("href").replace("/url?q=", "").replace("&", "?")
+          ).pathname,
+      });
+  });
+
+  return result;
+}
+
 function printProgress(prefix, value, max) {
-  const progress = parseInt((value / max) * 100);
   process.stdout.clearLine(0);
   process.stdout.cursorTo(0);
-  process.stdout.write(`${prefix} ${progress}%`);
+  process.stdout.write(`${prefix} ${value}/${max}`);
 }
