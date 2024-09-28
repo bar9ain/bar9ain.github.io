@@ -152,9 +152,10 @@
             <div
               class="card-text small text-muted text-truncate"
               v-if="movie.english"
-              :title="movie.english"
+              :title="movie.english + (movie.year ? ` (${movie.year})` : '')"
             >
               {{movie.english}}
+              <template v-if="movie.year">({{movie.year}})</template>
             </div>
             <div class="d-flex justify-content-between align-items-center">
               <div class="card-text small text-muted">
