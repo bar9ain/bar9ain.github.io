@@ -1,6 +1,7 @@
 const supabaseJs = require("@supabase/supabase-js");
 const cheerio = require("cheerio");
 const fs = require("node:fs");
+const _ = require("lodash");
 
 const supabase = supabaseJs.createClient(
   process.env.DB_URL,
@@ -26,6 +27,7 @@ async function execute() {
   if (params.includes("sub")) fetchSub(imdbMovies);
   if (params.includes("check")) checkMovies(imdbMovies);
   if (params.includes("search")) findImdb(movies);
+  if (params.includes("torrent")) searchTorrents(imdbMovies);
 }
 
 function login() {
@@ -40,7 +42,7 @@ async function getMovies() {
   const firstDay = new Date(date.getFullYear(), date.getMonth(), 1)
     .toISOString()
     .substr(0, 10);
-  const lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0)
+  const lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 1)
     .toISOString()
     .substr(0, 10);
 
@@ -48,7 +50,7 @@ async function getMovies() {
     .from("cinema")
     .select("*, links (id, url, label)")
     .eq("hidden", false)
-    .gte("release_date", firstDay)
+    .gt("release_date", firstDay)
     .lte("release_date", lastDay)
     .order("release_date")
     .order("id", { ascending: false });
@@ -160,7 +162,7 @@ async function googleSearch(text, pattern) {
       titleNode.attr("href").replace("/url?q=", "")
     ).pathname.split("/")[2];
 
-    if (titleText.includes("› title"))
+    if (titleText.includes("› title") && !titleText.includes("TV Series"))
       result.push({
         imdb: titleUrl,
         text: titleText,
@@ -173,6 +175,74 @@ async function googleSearch(text, pattern) {
   });
 
   return result;
+}
+
+async function searchTorrents(movies) {
+  for await (const [i, movie] of movies.entries()) {
+    printProgress("Searching for torrents...", i + 1, movies.length);
+
+    if (movie.links.filter((x) => x.url.startsWith("magnet:")).length) continue;
+
+    const res = await fetch(
+      "https://apibay.org/q.php?q=" + movie.imdb + "&cat=211,207"
+    ).then((r) => r.json());
+
+    let torrents = res.filter((x) => x.id != 0);
+
+    if (
+      torrents.some(
+        (x) =>
+          x.name.includes("YTS.") ||
+          x.username === "GalaxyRG" ||
+          x.name.endsWith("RARBG")
+      )
+    ) {
+      torrents = torrents.filter(
+        (x) =>
+          x.name.includes("YTS.") ||
+          x.username === "GalaxyRG" ||
+          x.name.endsWith("RARBG")
+      );
+    } else {
+      torrents = torrents.filter(
+        (x) => !x.name.toLowerCase().includes("telesync")
+      );
+
+      if (torrents.length >= 7) {
+        torrents = torrents.filter((x) => x.status === "vip");
+      }
+
+      if (torrents.length >= 7) {
+        torrents = _.orderBy(
+          torrents,
+          ["seeders", "leechers"],
+          ["desc", "desc"]
+        ).slice(0, 7);
+      }
+    }
+
+    torrents = torrents.map((x) => ({
+      movie_id: movie.id,
+      label: [x.name, formatFileSize(x.size, 2)].join(" | "),
+      url: `magnet:?xt=urn:btih:${x.info_hash}&dn=${encodeURIComponent(
+        x.name
+      )}&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337&tr=udp%3A%2F%2Fopen.stealth.si%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce&tr=udp%3A%2F%2Ftracker.bittor.pw%3A1337%2Fannounce&tr=udp%3A%2F%2Fpublic.popcorn-tracker.org%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.dler.org%3A6969%2Fannounce&tr=udp%3A%2F%2Fexodus.desync.com%3A6969&tr=udp%3A%2F%2Fopen.demonii.com%3A1337%2Fannounce`,
+    }));
+
+    if (!torrents.length) continue;
+
+    const { error } = await supabase.from("links").insert(torrents);
+    if (error) console.log(error.message || "", error.details);
+  }
+}
+
+function formatFileSize(bytes, decimalPoint) {
+  if (bytes == 0) return "0 Bytes";
+  var k = 1000,
+    dm = decimalPoint || 2,
+    sizes = ["Bytes", "KB", "MB", "GB", "TB", "PB", "EB", "ZB", "YB"],
+    i = Math.floor(Math.log(bytes) / Math.log(k));
+  return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + sizes[i];
 }
 
 function printProgress(prefix, value, max) {

@@ -260,75 +260,94 @@
                   @click="updateProp('video_url', movie)"
                 ></i>
               </li>
-              <template v-if="isAdmin || movie.links.length">
-                <li><hr class="dropdown-divider" /></li>
-                <li
-                  v-for="link in movie.links"
-                  :key="link.id"
-                  style="border-bottom: 1px dashed #ddd"
+              <li><hr class="dropdown-divider" /></li>
+              <li
+                v-for="link in movie.links"
+                :key="link.id"
+                style="border-bottom: 1px dashed #ddd"
+              >
+                <a
+                  :href="link.url"
+                  class="text-truncate"
+                  target="_blank"
+                  :title="link.label"
                 >
-                  <a :href="link.url" class="text-truncate" target="_blank">
-                    <img
-                      v-if="link.url.startsWith('magnet:')"
-                      src="./magnet.png"
-                      height="14"
-                      class="me-1"
-                    />
-                    <img
-                      v-else
-                      :src="getFavicon(link.url)"
-                      height="14"
-                      class="me-1"
-                    />
+                  <img
+                    v-if="link.url.startsWith('magnet:')"
+                    src="./magnet.png"
+                    height="14"
+                    class="me-1"
+                  />
+                  <img
+                    v-else
+                    :src="getFavicon(link.url)"
+                    height="14"
+                    class="me-1"
+                  />
+                  <span class="text-truncate" style="direction: rtl">
                     {{link.label || getUrlDisplay(link.url)}}
-                  </a>
-                  <i
-                    v-if="isAdmin"
-                    role="button"
-                    class="fi fi-rr-edit ms-auto me-2"
-                    @click="updateLink(link)"
-                  ></i>
-                </li>
-                <li v-if="isAdmin">
-                  <a role="button" @click="addLink(movie.id)">Thêm link</a>
-                </li>
-                <li><hr class="dropdown-divider" /></li>
-                <li>
-                  <a
-                    v-if="movie.subs_link"
-                    :href="movie.subs_link"
-                    class="text-truncate me-3"
-                    target="_blank"
-                  >
-                    <img
-                      src="https://subsource.net/favicon-16x16.png"
-                      height="14"
-                      class="me-1"
-                    />
-                    Tìm phụ đề
-                  </a>
-                  <a
-                    v-else-if="movie.english"
-                    :href="`https://subsource.net/search/${encodeURIComponent(movie.english)}`"
-                    class="text-truncate me-3"
-                    target="_blank"
-                  >
-                    <img
-                      src="https://subsource.net/favicon-16x16.png"
-                      height="14"
-                      class="me-1"
-                    />
-                    Tìm phụ đề...
-                  </a>
-                  <a v-else class="text-muted">Chưa có phụ đề</a>
-                  <i
-                    v-if="isAdmin"
-                    role="button"
-                    class="fi fi-rr-edit ms-auto me-2"
-                    @click="updateProp('subs_link', movie)"
-                  ></i>
-                </li>
-              </template>
+                  </span>
+                </a>
+                <i
+                  v-if="isAdmin"
+                  role="button"
+                  class="fi fi-rr-edit ms-auto me-2"
+                  @click="updateLink(link)"
+                ></i>
+              </li>
+              <li v-if="movie.imdb">
+                <a
+                  :href="`https://thepiratebay.org/search.php?q=${movie.imdb}&cat=211,207`"
+                  class="text-truncate me-3"
+                  target="_blank"
+                >
+                  <img
+                    src="https://torrindex.net/images/tpbsmall_notext.jpg"
+                    height="14"
+                    class="me-1"
+                  />
+                  Tìm torrent
+                </a>
+              </li>
+              <li v-if="isAdmin">
+                <a role="button" @click="addLink(movie.id)">Thêm link</a>
+              </li>
+              <li><hr class="dropdown-divider" /></li>
+              <li>
+                <a
+                  v-if="movie.subs_link"
+                  :href="movie.subs_link"
+                  class="text-truncate me-3"
+                  target="_blank"
+                >
+                  <img
+                    src="https://subsource.net/favicon-16x16.png"
+                    height="14"
+                    class="me-1"
+                  />
+                  Tìm phụ đề
+                </a>
+                <a
+                  v-else-if="movie.english"
+                  :href="`https://subsource.net/search/${encodeURIComponent(movie.english)}`"
+                  class="text-truncate me-3"
+                  target="_blank"
+                >
+                  <img
+                    src="https://subsource.net/favicon-16x16.png"
+                    height="14"
+                    class="me-1"
+                  />
+                  Tìm phụ đề...
+                </a>
+                <a v-else class="text-muted">Chưa có phụ đề</a>
+                <i
+                  v-if="isAdmin"
+                  role="button"
+                  class="fi fi-rr-edit ms-auto me-2"
+                  @click="updateProp('subs_link', movie)"
+                ></i>
+              </li>
               <template v-if="isAdmin">
                 <li><hr class="dropdown-divider" /></li>
                 <li>
@@ -407,7 +426,7 @@
             const firstDay = new Date(date.getFullYear(), date.getMonth(), 1)
               .toISOString()
               .substr(0, 10);
-            const lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0)
+            const lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 1)
               .toISOString()
               .substr(0, 10);
 
@@ -415,7 +434,7 @@
               .from("cinema")
               .select("*, links (id, url, label)")
               .eq("hidden", false)
-              .gte("release_date", firstDay)
+              .gt("release_date", firstDay)
               .lte("release_date", lastDay)
               .order("release_date")
               .order("id", { ascending: false });
@@ -542,7 +561,12 @@
             const url = prompt("Add link:");
             if (!url) return;
 
-            const label = prompt("Label:");
+            let name = "";
+            if (url.startsWith("magnet:")) {
+              name = new URL(url).searchParams.get("dn");
+            }
+
+            const label = prompt("Label:", name);
 
             const { error } = await client
               .from("links")
