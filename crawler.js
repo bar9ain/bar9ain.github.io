@@ -28,6 +28,7 @@ async function execute() {
   if (params.includes("check")) checkMovies(imdbMovies);
   if (params.includes("search")) findImdb(movies);
   if (params.includes("torrent")) searchTorrents(imdbMovies);
+  if (params.includes("fshare")) searchFshare(movies);
 }
 
 function login() {
@@ -131,20 +132,103 @@ async function findImdb(movies) {
   const list = movies.filter((x) => !x.imdb);
   const output = [];
   for await (const [i, movie] of list.entries()) {
+    printProgress("Finding IMDB...", i + 1, list.length);
     const title = movie.english
       ? [movie.english, movie.year].join(" ")
       : movie.title;
-    const r = await googleSearch(
+    const rr = await googleSearch(
       `${title} imdb`,
       `a[href^='/url?q=https://www.imdb.com/title/']`
     );
+    const r = rr
+      .map((titleNode) => {
+        const text = titleNode.text();
+        const path = new URL(
+          titleNode.attr("href").replace("/url?q=", "").replace("&", "?")
+        ).pathname;
+        const url = `https://www.imdb.com/title${path}`;
+        const imdb = path.split("/")[2];
+
+        if (
+          text.includes("› title") &&
+          !text.includes("TV Series") &&
+          !text.includes("TV Episode")
+        )
+          return { imdb, text, url };
+      })
+      .filter((x) => x);
     output.push({ id: movie.id, title: movie.title, imdb: r });
-    printProgress("Finding IMDB...", i + 1, list.length);
   }
 
   fs.writeFile("./fetch.json", JSON.stringify(output), (err) => {
     if (err) console.error(err);
   });
+}
+
+async function searchFshare(movies) {
+  const list = movies.filter((x) => x.video_url || x.links.length);
+  const output = [];
+  for await (const [i, movie] of list.entries()) {
+    printProgress("Search for Fshare links...", i + 1, list.length);
+    if (movie.links.filter((x) => x.url.includes("fshare.vn")).length) continue;
+
+    const record = await scanTvCine(movie);
+    if (record) output.push(record);
+    else output.push(await scanFshareGG(movie));
+  }
+
+  fs.writeFile("./fetch.json", JSON.stringify(output), (err) => {
+    if (err) console.error(err);
+  });
+}
+
+async function scanFshareGG(movie) {
+  const title = movie.english
+    ? [movie.english, movie.year].join(" ")
+    : movie.title;
+  const rr = await googleSearch(
+    `${title} fshare`,
+    `a[href^='/url?q=https://www.fshare.vn/']`
+  );
+  const r = rr
+    .map((titleNode) => {
+      const label = titleNode.text();
+      const path = new URL(
+        titleNode.attr("href").replace("/url?q=", "").replace("&", "?")
+      ).pathname;
+      const url = `https://www.fshare.vn${path}`;
+      return { label, url };
+    })
+    .filter((x) => x);
+  return { id: movie.id, title: movie.title, links: r };
+}
+
+async function scanTvCine(movie) {
+  const title = movie.english
+    ? [movie.english, movie.year].join(" ")
+    : movie.title;
+
+  const url = `https://thuviencine.com/?s=${encodeURIComponent(title)}`;
+  const $ = await inspect(url);
+  const links = [];
+  for (const e of $('[rel="bookmark"]')) {
+    const found = $(e).attr("title");
+    const downloadUrl = [
+      "https://thuviencine.com/download/?id=",
+      $(e).closest(".type-post").attr("id").split("-").pop(),
+    ].join("");
+
+    const $$ = await inspect(downloadUrl);
+    const url = $$("#hover").first().attr("href");
+    links.push({ found, url, label: 'Fshare Folder' });
+  }
+
+  if (links.length) return { id: movie.id, title: movie.title, links };
+}
+
+async function inspect(url) {
+  const response = await fetch(url).then((r) => r.text());
+  return cheerio.load(response);
 }
 
 async function googleSearch(text, pattern) {
@@ -157,21 +241,7 @@ async function googleSearch(text, pattern) {
 
   $(pattern).each((i, title) => {
     const titleNode = $(title);
-    const titleText = titleNode.text();
-    const titleUrl = new URL(
-      titleNode.attr("href").replace("/url?q=", "")
-    ).pathname.split("/")[2];
-
-    if (titleText.includes("› title") && !titleText.includes("TV Series"))
-      result.push({
-        imdb: titleUrl,
-        text: titleText,
-        url:
-          "https://www.imdb.com/" +
-          new URL(
-            titleNode.attr("href").replace("/url?q=", "").replace("&", "?")
-          ).pathname,
-      });
+    result.push(titleNode);
   });
 
   return result;

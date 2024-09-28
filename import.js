@@ -22,13 +22,24 @@ async function read() {
 
   for await (const [i, record] of input.entries()) {
     printProgress("Importing...", i + 1, input.length);
-    if (!record.imdb || !record.imdb.length) continue;
+    if (record.imdb?.length) {
+      const { error } = await supabase
+        .from("cinema")
+        .update({ imdb: record.imdb[0].imdb })
+        .eq("id", record.id);
+      if (error) console.log(error.message, error.details);
+    }
 
-    const { error } = await supabase
-      .from("cinema")
-      .update({ imdb: record.imdb[0].imdb })
-      .eq("id", record.id);
-    if (error) console.log(error.message, error.details);
+    if (record.links?.length) {
+      const { error } = await supabase.from("links").insert(
+        record.links.map((x) => ({
+          label: x.label,
+          url: x.url,
+          movie_id: record.id,
+        }))
+      );
+      if (error) console.log(error.message, error.details);
+    }
   }
 }
 
