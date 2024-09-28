@@ -54,13 +54,6 @@ async function getMovies() {
 }
 
 async function checkMovies(movies) {
-  //
-  const list = movies
-    .filter((x) => !x.video_url && !x.links.length)
-    .map((x) => x.imdb);
-
-  console.log("Checking new movies...");
-
   for await (const [i, movie] of movies.entries()) {
     if (movie.video_url || movie.links.length) continue;
     const result = await fetch(

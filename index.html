@@ -140,10 +140,16 @@
             class="card-img-top"
             :src="movie.image"
             :role="movie.video_url ? 'button':''"
-            :style="{'filter': (movie.video_url || movie.links.length) ? '':'grayscale(1)'}"
+            :style="{'filter': (movie.video_url || movie.links.length) ? '':'grayscale(1) opacity(.75)'}"
             @click="openLink(movie)"
             @contextmenu.prevent="showContext($event, movie)"
           />
+          <span
+            v-if="movie.rate"
+            class="position-absolute top-0 end-0 badge rounded-pill bg-warning text-dark shadow mt-2 me-2"
+          >
+            {{movie.rate}}
+          </span>
           <div
             class="card-body"
             @click="isAdmin && (iframeSrc = movie.moveek_url)"
