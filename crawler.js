@@ -146,7 +146,7 @@ async function findImdb(movies) {
         const path = new URL(
           titleNode.attr("href").replace("/url?q=", "").replace("&", "?")
         ).pathname;
-        const url = `https://www.imdb.com/title${path}`;
+        const url = `https://www.imdb.com${path}`;
         const imdb = path.split("/")[2];
 
         if (
@@ -197,6 +197,9 @@ async function scanFshareGG(movie) {
         titleNode.attr("href").replace("/url?q=", "").replace("&", "?")
       ).pathname;
       const url = `https://www.fshare.vn${path}`;
+
+      if (url.includes("/file/") && !checkFshareAlive(url)) return;
+
       return { label, url };
     })
     .filter((x) => x);
@@ -212,18 +215,26 @@ async function scanTvCine(movie) {
   const $ = await inspect(url);
   const links = [];
   for (const e of $('[rel="bookmark"]')) {
+    const tv = $(e).find(".item-tv").text();
+    if (tv === "TV") continue;
+
     const found = $(e).attr("title");
     const downloadUrl = [
       "https://thuviencine.com/download/?id=",
       $(e).closest(".type-post").attr("id").split("-").pop(),
     ].join("");
-
+    const label = $(e).find(".item-quality").text().trim();
     const $$ = await inspect(downloadUrl);
     const url = $$("#hover").first().attr("href");
-    links.push({ found, url, label: 'Fshare Folder' });
+    links.push({ found, url, label });
   }
 
   if (links.length) return { id: movie.id, title: movie.title, links };
+}
+
+async function checkFshareAlive(url) {
+  const r = await fetch(url);
+  return r.status !== 404;
 }
 
 async function inspect(url) {
