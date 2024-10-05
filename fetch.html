@@ -194,6 +194,8 @@
                 .update({ resolved: true })
                 .eq("key", key);
               if (crawlError) throw new Error(crawlError.details);
+
+              await fetchImdb();
             } catch (e) {
               alert(e.message);
             } finally {
@@ -214,6 +216,13 @@
             } finally {
               loading.value = false;
             }
+          }
+
+          async function fetchImdb() {
+            const { error } = await client.functions.invoke("imdb-info", {
+              body: JSON.stringify({ date: key.replace("-imdb", "") }),
+            });
+            if (error) throw new Error(error.message || error.details)
           }
 
           function removeMovie(movieId) {
