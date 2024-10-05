@@ -125,6 +125,13 @@
                   {{ movie.title}}
                 </a>
                 <div class="small text-muted">
+                  <img
+                    v-for="country in movie.countries"
+                    :key="country.code"
+                    :src="`https://flagsapi.com/${country.code}/shiny/16.png`"
+                    class="me-1"
+                    :title="country.name"
+                  />
                   {{movie.english}} ({{movie.year}})
                 </div>
               </td>
@@ -235,7 +242,15 @@
             window.addEventListener("keyup", (e) => {
               if (e.keyCode === 27) {
                 iframeSrc.value = null;
-                contextMovieId.value = null;
+              }
+            });
+            window.addEventListener("message", (event) => {
+              if (event.data === "close") {
+                iframeSrc.value = null;
+              }
+
+              if (event.data === "update") {
+                fetchMovies();
               }
             });
           });

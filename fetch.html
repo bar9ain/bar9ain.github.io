@@ -246,11 +246,14 @@
 
               const { error: crawlError } = await client
                 .from("crawl_results")
-                .update({ resolved: true })
+                .update({ resolved: true, data: result.value })
                 .eq("key", key);
               if (crawlError) throw new Error(crawlError.details);
 
-              await fetchImdb();
+              if (key.endsWith("idmb")) await fetchImdb();
+
+              sendSignal("update");
+              sendSignal("close");
             } catch (e) {
               alert(e.message);
             } finally {
@@ -266,6 +269,8 @@
                 .update({ resolved: true })
                 .eq("key", key);
               if (error) throw new Error(error.details);
+
+              sendSignal("close");
             } catch (e) {
               alert(e.message);
             } finally {
@@ -348,6 +353,10 @@
             result.value = result.value;
           }
 
+          function sendSignal(message) {
+            window.top.postMessage(message, window.location.origin);
+          }
+
           onMounted(async () => {
             try {
               loading.value = true;
@@ -358,7 +367,7 @@
 
             window.addEventListener("keyup", (e) => {
               if (e.keyCode === 27) {
-                // window.location.href = "/404";
+                sendSignal("close");
               }
             });
           });
@@ -374,7 +383,7 @@
             removeLink,
             addLink,
             getFshareName,
-            updateName
+            updateName,
           };
         },
       }).mount("#app");
