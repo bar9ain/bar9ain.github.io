@@ -68,7 +68,7 @@
       <div
         class="container d-flex align-items-center p-3 justify-content-center border-bottom"
       >
-        <div class="d-flex w-100 align-items-center">
+        <div class="d-flex w-100 align-items-center gap-2">
           <input
             v-model="month"
             type="month"
@@ -82,6 +82,14 @@
             @click="scanImdb"
           >
             Scan IMDB
+          </button>
+          <button
+            type="button"
+            class="btn btn-secondary text-truncate small"
+            :disabled="loading"
+            @click="scanTorrentsAndSubs"
+          >
+            Scan Torrents
           </button>
         </div>
       </div>
@@ -137,7 +145,7 @@
 
       <div v-if="iframeSrc" class="iframe">
         <div class="background" @click="iframeSrc = null"></div>
-        <iframe :src="iframeSrc" @load="onFrameLoad"></iframe>
+        <iframe :src="iframeSrc"></iframe>
       </div>
     </div>
 
@@ -183,7 +191,32 @@
             iframeSrc.value = "/fetch.html?key=" + month.value + "-imdb";
           }
 
-          function onFrameLoad(e) {}
+          async function scanTorrentsAndSubs() {
+            try {
+              loading.value = true;
+              await scanTorrents();
+              await scanSubs();
+              await fetchMovies();
+            } catch (e) {
+              alert(e.message);
+            } finally {
+              loading.value = false;
+            }
+          }
+
+          async function scanTorrents() {
+            const { error } = await client.functions.invoke("scan-torrents", {
+              body: JSON.stringify({ date: month.value }),
+            });
+            if (error) throw new Error(error.message || error.details);
+          }
+
+          async function scanSubs() {
+            const { error } = await client.functions.invoke("scan-subs", {
+              body: JSON.stringify({ date: month.value }),
+            });
+            if (error) throw new Error(error.message || error.details);
+          }
 
           onMounted(async () => {
             fetchMovies();
@@ -202,7 +235,7 @@
             iframeSrc,
             fetchMovies,
             scanImdb,
-            onFrameLoad,
+            scanTorrentsAndSubs,
           };
         },
       }).mount("#app");

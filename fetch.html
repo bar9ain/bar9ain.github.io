@@ -64,7 +64,13 @@
       <table class="table table-bordered bg-white small">
         <tbody v-for="movie in result" :key="movie.id">
           <tr>
-            <th colspan="2" class="bg-light bg-gradient">{{movie.title}}</th>
+            <th
+              colspan="2"
+              class="bg-light bg-gradient"
+              @dblclick="addLink(movie.id)"
+            >
+              {{movie.title}}
+            </th>
             <th
               class="bg-light bg-gradient text-center text-danger"
               role="button"
@@ -222,7 +228,7 @@
             const { error } = await client.functions.invoke("imdb-info", {
               body: JSON.stringify({ date: key.replace("-imdb", "") }),
             });
-            if (error) throw new Error(error.message || error.details)
+            if (error) throw new Error(error.message || error.details);
           }
 
           function removeMovie(movieId) {
@@ -232,6 +238,20 @@
           function removeLink(movieId, index) {
             const movie = result.value.find((x) => x.id === movieId);
             movie.imdb = movie.imdb.filter((x, i) => i !== index);
+            result.value = result.value;
+          }
+
+          function addLink(movieId) {
+            const link = prompt("Enter link:");
+            if (!link) return;
+            try {
+              new URL(link);
+            } catch {
+              return alert("Invalid link!");
+            }
+
+            const movie = result.value.find((x) => x.id === movieId);
+            movie.imdb.push({ url: link, imdb: link.split("/")[4] });
             result.value = result.value;
           }
 
@@ -259,6 +279,7 @@
             skip,
             removeMovie,
             removeLink,
+            addLink,
           };
         },
       }).mount("#app");
