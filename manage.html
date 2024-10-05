@@ -144,11 +144,20 @@
                   {{movie.imdb}}
                 </a>
               </td>
-              <td width="70" :class="movie.video_url ? 'bg-success':''"></td>
               <td
                 width="70"
+                class="text-center text-white h5 align-middle"
+                :class="movie.video_url ? 'bg-success':''"
+              >
+                {{ movie.video_url?.endsWith("raw") ? "RAW" : "" }}
+              </td>
+              <td
+                width="70"
+                class="text-center text-white h5 align-middle"
                 :class="movie.links.some(x=>x.url.startsWith('magnet:')) ? 'bg-success':''"
-              ></td>
+              >
+                {{movie.links?.length || ""}}
+              </td>
               <td
                 width="70"
                 :class="movie.links.some(x=>x.url.includes('fshare.vn')) ? 'bg-success':''"
