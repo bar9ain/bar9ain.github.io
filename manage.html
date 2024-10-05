@@ -51,6 +51,10 @@
         height: 100%;
         background: rgba(0, 0, 0, 0.626);
       }
+
+      .bg-light {
+        background: #ececec !important;
+      }
     </style>
   </head>
   <body class="bg-dark">
@@ -89,19 +93,26 @@
               <th>Date</th>
               <th>Movie</th>
               <th>IMDB</th>
-              <th>Moveek</th>
+              <th class="text-center">HD</th>
+              <th class="text-center">Torrent</th>
+              <th class="text-center">Fshare</th>
             </tr>
           </thead>
           <tbody>
-            <tr v-for="movie in movies">
-              <td>{{ movie.release_date }}</td>
+            <tr
+              v-for="movie in movies"
+              :class="(movie.video_url || movie.links.length) ? '': 'bg-light'"
+            >
+              <td class="text-truncate">{{ movie.release_date }}</td>
               <td>
-                {{ movie.title}}<br />
+                <a :href="movie.moveek_url" target="_blank">
+                  {{ movie.title}}
+                </a>
                 <div class="small text-muted">
                   {{movie.english}} ({{movie.year}})
                 </div>
               </td>
-              <td>
+              <td class="text-truncate">
                 <a
                   v-if="movie.imdb"
                   target="_blank"
@@ -110,11 +121,15 @@
                   {{movie.imdb}}
                 </a>
               </td>
-              <td>
-                <a target="_blank" :href="movie.moveek_url">
-                  {{movie.moveek_url.split('/')[4]}}
-                </a>
-              </td>
+              <td width="70" :class="movie.video_url ? 'bg-success':''"></td>
+              <td
+                width="70"
+                :class="movie.links.some(x=>x.url.startsWith('magnet:')) ? 'bg-success':''"
+              ></td>
+              <td
+                width="70"
+                :class="movie.links.some(x=>x.url.includes('fshare.vn')) ? 'bg-success':''"
+              ></td>
             </tr>
           </tbody>
         </table>
