@@ -63,3 +63,13 @@ export function formatFileSize(bytes, decimalPoint) {
     i = Math.floor(Math.log(bytes) / Math.log(k));
   return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + sizes[i];
 }
+
+export async function inspect(url) {
+  const response = await fetch(url).then((r) => r.text());
+  return cheerio.load(response);
+}
+
+export async function checkFshareAlive(url) {
+  const r = await fetch(url);
+  return r.status !== 404;
+}

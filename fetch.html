@@ -93,6 +93,33 @@
               &times;
             </td>
           </tr>
+          <tr v-for="(link, index) in movie.links" :key="index">
+            <td>
+              <div class="text-danger" @dblclick="updateName(movie, index)">
+                {{link.label}}
+              </div>
+              <div class="small text-muted">{{link.found}}</div>
+            </td>
+            <td>
+              <a :href="link.url" target="_blank"> {{link.url}} </a>
+              <span
+                v-if="link.url?.includes('/file/')"
+                class="badge bg-warning ms-2"
+                role="button"
+                @click="getFshareName(movie, index, link.url)"
+              >
+                Get name
+              </span>
+            </td>
+            <td
+              width="40"
+              class="text-center text-danger"
+              role="button"
+              @click="removeLink(movie.id, index)"
+            >
+              &times;
+            </td>
+          </tr>
         </tbody>
       </table>
       <div class="d-flex align-items-center justify-content-end gap-2 p-2">
@@ -131,15 +158,37 @@
               return;
             }
 
-            if (key.endsWith("imdb")) {
-              await scanImdb();
-            }
+            await scan();
           }
 
           async function scanImdb() {
             const { data, error } = await client.functions.invoke("scan-imdb", {
               body: JSON.stringify({ date: key.replace("-imdb", "") }),
             });
+            if (error) {
+              return alert(error.details);
+            }
+
+            result.value = data;
+          }
+
+          function scan() {
+            if (key.endsWith("imdb")) {
+              return scanImdb();
+            }
+
+            if (key.endsWith("fshare")) {
+              return scanFshare();
+            }
+          }
+
+          async function scanFshare() {
+            const { data, error } = await client.functions.invoke(
+              "scan-fshare",
+              {
+                body: JSON.stringify({ date: key.replace("-fshare", "") }),
+              }
+            );
             if (error) {
               return alert(error.details);
             }
@@ -165,7 +214,7 @@
           async function refetch() {
             try {
               loading.value = true;
-              await scanImdb();
+              await scan();
             } finally {
               loading.value = false;
             }
@@ -237,7 +286,14 @@
 
           function removeLink(movieId, index) {
             const movie = result.value.find((x) => x.id === movieId);
-            movie.imdb = movie.imdb.filter((x, i) => i !== index);
+            if (key.endsWith("imdb")) {
+              movie.imdb = movie.imdb.filter((x, i) => i !== index);
+            }
+
+            if (key.endsWith("fshare")) {
+              movie.links = movie.links.filter((x, i) => i !== index);
+            }
+
             result.value = result.value;
           }
 
@@ -251,7 +307,44 @@
             }
 
             const movie = result.value.find((x) => x.id === movieId);
-            movie.imdb.push({ url: link, imdb: link.split("/")[4] });
+            if (key.endsWith("imdb")) {
+              movie.imdb.push({ url: link, imdb: link.split("/")[4] });
+            }
+
+            if (key.endsWith("fshare")) {
+              movie.links.push({ label: link.split("/")[4], url: link });
+            }
+
+            result.value = result.value;
+          }
+
+          async function getFshareName(movie, index, url) {
+            try {
+              loading.value = true;
+              const { data, error } = await client.functions.invoke(
+                "fshare-name",
+                {
+                  body: JSON.stringify({ url }),
+                }
+              );
+              if (error) throw new Error(error.message || error.details);
+
+              movie.links[index].label = data.name;
+              result.value = result.value;
+            } catch (e) {
+              alert(e.message);
+            } finally {
+              loading.value = false;
+            }
+          }
+
+          function updateName(movie, index) {
+            const label = window.prompt(
+              "Enter name:",
+              movie.links[index].label
+            );
+            if (!label) return;
+            movie.links[index].label = label;
             result.value = result.value;
           }
 
@@ -280,6 +373,8 @@
             removeMovie,
             removeLink,
             addLink,
+            getFshareName,
+            updateName
           };
         },
       }).mount("#app");
