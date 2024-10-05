@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>V-Cine</title>
+    <link rel="icon" href="favicon.png" />
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+    <script src="https://unpkg.com/jsrmvi/dist/jsrmvi.min.js"></script>
+
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC"
+      crossorigin="anonymous"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn-uicons.flaticon.com/uicons-regular-rounded/css/uicons-regular-rounded.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn-uicons.flaticon.com/uicons-solid-rounded/css/uicons-solid-rounded.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn-uicons.flaticon.com/uicons-bold-rounded/css/uicons-bold-rounded.css"
+    />
+
+    <style>
+      #app {
+        overflow-x: hidden;
+        min-height: 100vh;
+      }
+
+      .iframe iframe {
+        position: fixed;
+        top: 5%;
+        left: 5%;
+        width: 90%;
+        height: 90%;
+      }
+
+      .iframe .background {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.626);
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app">
+      <div
+        v-if="loading"
+        class="vh-100 vw-100 d-flex align-items-center justify-content-center position-fixed"
+      >
+        <img src="./images/loading.svg" width="100" />
+      </div>
+      <table class="table table-bordered bg-white small">
+        <tbody v-for="movie in result" :key="movie.id">
+          <tr>
+            <th colspan="2" class="bg-light bg-gradient">{{movie.title}}</th>
+            <th
+              class="bg-light bg-gradient text-center text-danger"
+              role="button"
+              @click="removeMovie(movie.id)"
+            >
+              &times;
+            </th>
+          </tr>
+          <tr v-for="(link, index) in movie.imdb" :key="index">
+            <td>{{link.text }}</td>
+            <td>
+              <a :href="link.url" target="_blank"> {{link.url}} </a>
+            </td>
+            <td
+              width="40"
+              class="text-center text-danger"
+              role="button"
+              @click="removeLink(movie.id, index)"
+            >
+              &times;
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="d-flex align-items-center justify-content-end gap-2 p-2">
+        <button class="btn btn-sm btn-primary" @click="save">Save</button>
+        <button class="btn btn-sm btn-info" @click="refetch">Refetch</button>
+        <button class="btn btn-sm btn-danger" @click="skip">Skip</button>
+        <button class="btn btn-sm btn-success" @click="resolve">Resolve</button>
+      </div>
+    </div>
+
+    <script>
+      const { createClient } = supabase;
+      const client = createClient(
+        "https://oxcdjkfjxwbwjooheeqn.supabase.co",
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im94Y2Rqa2ZqeHdid2pvb2hlZXFuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjY3MjU5MzAsImV4cCI6MjA0MjMwMTkzMH0.SRQlvn5BUh_NEzjMIBfETZ6GHWMQM7udm58fLQKrExc"
+      );
+      const { createApp, ref, onMounted, computed } = Vue;
+
+      createApp({
+        setup() {
+          const result = ref([]);
+          const loading = ref(false);
+          const key = window.location.search.replace("?key=", "");
+
+          async function fetchAndScan() {
+            if (!key) return;
+
+            const { data: existed } = await client
+              .from("crawl_results")
+              .select()
+              .eq("key", key)
+              .eq("resolved", false);
+
+            if (existed.length) {
+              result.value = existed[0].data;
+              return;
+            }
+
+            if (key.endsWith("imdb")) {
+              await scanImdb();
+            }
+          }
+
+          async function scanImdb() {
+            const { data, error } = await client.functions.invoke("scan-imdb", {
+              body: JSON.stringify({ date: key.replace("-imdb", "") }),
+            });
+            if (error) {
+              return alert(error.details);
+            }
+
+            result.value = data;
+          }
+
+          async function save() {
+            try {
+              loading.value = true;
+              const { error } = await client
+                .from("crawl_results")
+                .update({ data: result.value })
+                .eq("key", key);
+              if (error) throw new Error(error.details);
+            } catch (e) {
+              alert(e.message);
+            } finally {
+              loading.value = false;
+            }
+          }
+
+          async function refetch() {
+            try {
+              loading.value = true;
+              await scanImdb();
+            } finally {
+              loading.value = false;
+            }
+          }
+
+          async function resolve() {
+            try {
+              loading.value = true;
+              for await (const record of result.value) {
+                if (record.imdb?.length) {
+                  const { error } = await client
+                    .from("cinema")
+                    .update({ imdb: record.imdb[0].imdb })
+                    .eq("id", record.id);
+                  if (error) console.log(error.message, error.details);
+                }
+
+                if (record.links?.length) {
+                  const { error } = await client.from("links").insert(
+                    record.links.map((x) => ({
+                      label: x.label,
+                      url: x.url,
+                      movie_id: record.id,
+                    }))
+                  );
+                  if (error) console.log(error.message, error.details);
+                }
+              }
+
+              const { error: crawlError } = await client
+                .from("crawl_results")
+                .update({ resolved: true })
+                .eq("key", key);
+              if (crawlError) throw new Error(crawlError.details);
+            } catch (e) {
+              alert(e.message);
+            } finally {
+              loading.value = false;
+            }
+          }
+
+          async function skip() {
+            try {
+              loading.value = true;
+              const { error } = await client
+                .from("crawl_results")
+                .update({ resolved: true })
+                .eq("key", key);
+              if (error) throw new Error(error.details);
+            } catch (e) {
+              alert(e.message);
+            } finally {
+              loading.value = false;
+            }
+          }
+
+          function removeMovie(movieId) {
+            result.value = result.value.filter((x) => x.id !== movieId);
+          }
+
+          function removeLink(movieId, index) {
+            const movie = result.value.find((x) => x.id === movieId);
+            movie.imdb = movie.imdb.filter((x, i) => i !== index);
+            result.value = result.value;
+          }
+
+          onMounted(async () => {
+            try {
+              loading.value = true;
+              await fetchAndScan();
+            } finally {
+              loading.value = false;
+            }
+
+            window.addEventListener("keyup", (e) => {
+              if (e.keyCode === 27) {
+                // window.location.href = "/404";
+              }
+            });
+          });
+
+          return {
+            result,
+            loading,
+            save,
+            refetch,
+            resolve,
+            skip,
+            removeMovie,
+            removeLink,
+          };
+        },
+      }).mount("#app");
+    </script>
+  </body>
+</html>
