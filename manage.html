@@ -120,7 +120,7 @@
               :class="(movie.video_url || movie.links.length) ? '': 'bg-light'"
             >
               <td class="text-truncate">{{ movie.release_date }}</td>
-              <td>
+              <td @dblclick="editMovie(movie)">
                 <a :href="movie.moveek_url" target="_blank">
                   {{ movie.title}}
                 </a>
@@ -149,14 +149,27 @@
                 class="text-center text-white h5 align-middle"
                 :class="movie.video_url ? 'bg-success':''"
               >
-                {{ movie.video_url?.endsWith("raw") ? "RAW" : "" }}
+                <template v-if="movie.video_url">
+                  {{ movie.video_url.endsWith("raw") ? "RAW" :
+                  movie.video_url.includes("netflix.com") ? "NF":"" }}
+                </template>
+                <a
+                  v-else-if="movie.imdb"
+                  :href="`https://vidsrc.net/embed/movie/${movie.imdb}/`"
+                  target="_blank"
+                  class="text-decoration-none"
+                >
+                  <i class="fi fi-br-search text-primary"></i>
+                </a>
               </td>
               <td
                 width="70"
                 class="text-center text-white h5 align-middle"
                 :class="movie.links.some(x=>x.url.startsWith('magnet:')) ? 'bg-success':''"
               >
-                {{movie.links?.length || ""}}
+                {{(movie.links &&
+                movie.links.filter(x=>x.url.startsWith("magnet:")).length) ||
+                ""}}
               </td>
               <td
                 width="70"
@@ -246,6 +259,10 @@
             if (error) throw new Error(error.message || error.details);
           }
 
+          function editMovie(movie) {
+            iframeSrc.value = "/edit.html?id=" + movie.id;
+          }
+
           onMounted(async () => {
             fetchMovies();
             window.addEventListener("keyup", (e) => {
@@ -273,6 +290,7 @@
             scanImdb,
             scanTorrentsAndSubs,
             scanFshare,
+            editMovie,
           };
         },
       }).mount("#app");

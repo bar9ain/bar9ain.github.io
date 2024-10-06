@@ -1,5 +1,6 @@
 import * as cheerio from "https://esm.sh/cheerio@1.0.0-rc.12";
 import { createClient } from "jsr:@supabase/supabase-js@2";
+import moment from "https://deno.land/x/momentjs@2.29.1-deno/mod.ts";
 
 export function getSupabaseClient() {
   return createClient(
@@ -32,14 +33,9 @@ export async function googleSearch(text, pattern) {
   return result;
 }
 
-export async function getMovies(d) {
-  const date = new Date(d);
-  const firstDay = new Date(date.getFullYear(), date.getMonth(), 1)
-    .toISOString()
-    .substr(0, 10);
-  const lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 1)
-    .toISOString()
-    .substr(0, 10);
+export async function getMovies(date) {
+  const firstDay = moment(date).startOf("month").format("YYYY-MM-DD");
+  const lastDay = moment(date).endOf("month").format("YYYY-MM-DD");
 
   const supabase = getSupabaseClient();
 
@@ -47,7 +43,7 @@ export async function getMovies(d) {
     .from("cinema")
     .select("*, links (id, url, label)")
     .eq("hidden", false)
-    .gt("release_date", firstDay)
+    .gte("release_date", firstDay)
     .lte("release_date", lastDay)
     .order("release_date")
     .order("id", { ascending: false });

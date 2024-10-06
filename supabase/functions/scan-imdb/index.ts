@@ -4,9 +4,12 @@
 
 // Setup type definitions for built-in Supabase Runtime APIs
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { createClient } from "jsr:@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
-import { googleSearch } from "../_shared/index.ts";
+import {
+  getMovies,
+  getSupabaseClient,
+  googleSearch,
+} from "../_shared/index.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -28,31 +31,12 @@ Deno.serve(async (req) => {
   }
 });
 
-async function findImdb(_date: string) {
-  const date = new Date(_date);
-  const firstDay = new Date(date.getFullYear(), date.getMonth(), 1)
-    .toISOString()
-    .substr(0, 10);
-  const lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 1)
-    .toISOString()
-    .substr(0, 10);
-
-  const supabase = createClient(
-    Deno.env.get("SUPABASE_URL")!,
-    Deno.env.get("SUPABASE_ANON_KEY")!
-  );
-
-  const { data: movies } = await supabase
-    .from("cinema")
-    .select("*, links (id, url, label)")
-    .eq("hidden", false)
-    .gt("release_date", firstDay)
-    .lte("release_date", lastDay)
-    .order("release_date")
-    .order("id", { ascending: false });
-
+async function findImdb(date: string) {
+  const supabase = getSupabaseClient();
+  const movies = await getMovies(date);
   const list = movies.filter((x) => !x.imdb);
   const output: any = [];
+
   for await (const movie of list) {
     const title = movie.english
       ? [movie.english, movie.year].join(" ")
@@ -83,7 +67,7 @@ async function findImdb(_date: string) {
 
   if (!output.length) return [];
 
-  const key = _date + "-imdb";
+  const key = date + "-imdb";
 
   const { data, error } = await supabase
     .from("crawl_results")

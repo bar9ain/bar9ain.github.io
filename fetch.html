@@ -143,18 +143,18 @@
           const result = ref([]);
           const loading = ref(false);
           const key = window.location.search.replace("?key=", "");
+          const date = key.replace("-imdb", "").replace("-fshare", "");
 
           async function fetchAndScan() {
             if (!key) return;
 
-            const { data: existed } = await client
+            const { data } = await client
               .from("crawl_results")
               .select()
-              .eq("key", key)
-              .eq("resolved", false);
+              .eq("key", key);
 
-            if (existed.length) {
-              result.value = existed[0].data;
+            if (data.length) {
+              result.value = data[0].data;
               return;
             }
 
@@ -163,7 +163,7 @@
 
           async function scanImdb() {
             const { data, error } = await client.functions.invoke("scan-imdb", {
-              body: JSON.stringify({ date: key.replace("-imdb", "") }),
+              body: JSON.stringify({ date }),
             });
             if (error) {
               return alert(error.details);
@@ -186,7 +186,7 @@
             const { data, error } = await client.functions.invoke(
               "scan-fshare",
               {
-                body: JSON.stringify({ date: key.replace("-fshare", "") }),
+                body: JSON.stringify({ date }),
               }
             );
             if (error) {
@@ -250,7 +250,7 @@
                 .eq("key", key);
               if (crawlError) throw new Error(crawlError.details);
 
-              if (key.endsWith("idmb")) await fetchImdb();
+              if (key.endsWith("imdb")) await fetchImdb();
 
               sendSignal("update");
               sendSignal("close");
@@ -280,7 +280,7 @@
 
           async function fetchImdb() {
             const { error } = await client.functions.invoke("imdb-info", {
-              body: JSON.stringify({ date: key.replace("-imdb", "") }),
+              body: JSON.stringify({ date }),
             });
             if (error) throw new Error(error.message || error.details);
           }
