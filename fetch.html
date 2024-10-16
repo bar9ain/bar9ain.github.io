@@ -9,6 +9,7 @@
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
     <script src="https://unpkg.com/jsrmvi/dist/jsrmvi.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.30.1/moment.min.js"></script>
 
     <link
       href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css"
@@ -69,7 +70,15 @@
               class="bg-light bg-gradient"
               @dblclick="addLink(movie.id)"
             >
-              {{movie.title}}
+              <a
+                :href="movies.find(x=>x.id==movie.id)?.moveek_url"
+                target="_blank"
+              >
+                {{movie.title}}
+              </a>
+              <span class="small text-muted fw-normal ms-2">
+                {{movies.find(x=>x.id==movie.id)?.english}}
+              </span>
             </th>
             <th
               class="bg-light bg-gradient text-center text-danger"
@@ -144,6 +153,19 @@
           const loading = ref(false);
           const key = window.location.search.replace("?key=", "");
           const date = key.replace("-imdb", "").replace("-fshare", "");
+          const movies = ref([]);
+
+          async function fetchMovies() {
+            const firstDay = moment(date).startOf("month").format("YYYY-MM-DD");
+            const lastDay = moment(date).endOf("month").format("YYYY-MM-DD");
+            const result = await client
+              .from("cinema")
+              .select("id, moveek_url, english")
+              .gte("release_date", firstDay)
+              .lte("release_date", lastDay);
+
+            movies.value = result.data;
+          }
 
           async function fetchAndScan() {
             if (!key) return;
@@ -334,6 +356,10 @@
               );
               if (error) throw new Error(error.message || error.details);
 
+              if (!data.name) {
+                return alert("Link is dead!");
+              }
+
               movie.links[index].label = data.name;
               result.value = result.value;
             } catch (e) {
@@ -361,6 +387,7 @@
             try {
               loading.value = true;
               await fetchAndScan();
+              await fetchMovies();
             } finally {
               loading.value = false;
             }
@@ -375,6 +402,7 @@
           return {
             result,
             loading,
+            movies,
             save,
             refetch,
             resolve,
