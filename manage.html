@@ -235,9 +235,10 @@
           async function scanTorrentsAndSubs() {
             try {
               loading.value = true;
-              const torrents = await scanTorrents();
-              const subs = await scanSubs();
+              const torrents = await scanTorrents() || [];
+              const subs = await scanSubs() || [];
               if (torrents.concat(subs).length) alert(torrents.concat(subs));
+              else alert('Updated nothing!')
               await fetchMovies();
             } catch (e) {
               alert(e.message);
