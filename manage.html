@@ -235,10 +235,10 @@
           async function scanTorrentsAndSubs() {
             try {
               loading.value = true;
-              const torrents = await scanTorrents() || [];
-              const subs = await scanSubs() || [];
+              const torrents = (await scanTorrents()) || [];
+              const subs = (await scanSubs()) || [];
               if (torrents.concat(subs).length) alert(torrents.concat(subs));
-              else alert('Updated nothing!')
+              else alert("Updated nothing!");
               await fetchMovies();
             } catch (e) {
               alert(e.message);
@@ -248,17 +248,21 @@
           }
 
           async function scanTorrents() {
-            const { error } = await client.functions.invoke("scan-torrents", {
+            const { data, error } = await client.functions.invoke("scan-torrents", {
               body: JSON.stringify({ date: month.value }),
             });
             if (error) throw new Error(error.message || error.details);
+
+            return data;
           }
 
           async function scanSubs() {
-            const { error } = await client.functions.invoke("scan-subs", {
+            const { data, error } = await client.functions.invoke("scan-subs", {
               body: JSON.stringify({ date: month.value }),
             });
             if (error) throw new Error(error.message || error.details);
+
+            return data;
           }
 
           function editMovie(movie) {
