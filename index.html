@@ -171,10 +171,12 @@
                 <template v-else>{{movie.year}}</template>
               </div>
               <template v-if="movie.video_url">
-                <i
+                <span
                   v-if="movie.video_url.endsWith('raw')"
-                  class="fi fi-sr-closed-captioning-slash h5 mb-0 text-success"
-                ></i>
+                  class="badge bg-success px-1 rounded-pill"
+                >
+                  RAW
+                </span>
                 <i
                   v-else-if="movie.video_url.includes('m3u') || movie.video_url.includes('dashtype')"
                   class="fi fi-br-high-definition h5 mb-0 text-primary"
@@ -193,7 +195,15 @@
               role="menu"
               aria-labelledby="dropdownMenu"
             >
-              <li class="small px-2 fw-bold">{{movie.title}}</li>
+              <li class="d-flex align-items-center small px-2 fw-bold">
+                {{movie.title}}
+                <i
+                  v-if="isAdmin"
+                  role="button"
+                  class="fi fi-rr-edit ms-auto"
+                  @click="iframeSrc = '/edit.html?id=' + movie.id"
+                ></i>
+              </li>
               <li><hr class="dropdown-divider" /></li>
               <li v-if="movie.moveek_url">
                 <a
@@ -311,6 +321,11 @@
               </li>
               <li v-if="isAdmin">
                 <a role="button" @click="addLink(movie.id)">Thêm link</a>
+              </li>
+              <li v-if="isAdmin">
+                <a role="button" @click="scanTorrents(movie.id)">
+                  Scan torrents
+                </a>
               </li>
               <li><hr class="dropdown-divider" /></li>
               <li>
@@ -621,6 +636,17 @@
             fetchMovies();
           }
 
+          async function scanTorrents(movieId) {
+            const { data, error } = await client.functions.invoke(
+              "scan-torrents",
+              { body: JSON.stringify({ movieId }) }
+            );
+            if (error) return alert(error.message || error.details);
+            if (!data.length) return alert("Found nothing!");
+
+            alert(data);
+          }
+
           onMounted(async () => {
             if (window.location.search === "?admin") {
               return signIn();
@@ -640,6 +666,16 @@
               "click",
               () => (contextMovieId.value = null)
             );
+
+            window.addEventListener("message", (event) => {
+              if (event.data === "close") {
+                iframeSrc.value = null;
+              }
+
+              if (event.data === "update") {
+                fetchMovies();
+              }
+            });
           });
 
           return {
@@ -661,6 +697,7 @@
             getUrlDisplay,
             addLink,
             updateLink,
+            scanTorrents,
           };
         },
       }).mount("#app");

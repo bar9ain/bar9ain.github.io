@@ -51,6 +51,17 @@ export async function getMovies(date) {
   return data;
 }
 
+export async function getMovie(movieId: number) {
+  const supabase = getSupabaseClient();
+
+  const { data } = await supabase
+    .from("cinema")
+    .select("*, links (id, url, label)")
+    .eq("id", movieId);
+
+  return data;
+}
+
 export function formatFileSize(bytes, decimalPoint) {
   if (bytes == 0) return "0 Bytes";
   var k = 1000,

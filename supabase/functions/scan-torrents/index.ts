@@ -7,6 +7,7 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 import {
   formatFileSize,
+  getMovie,
   getMovies,
   getSupabaseClient,
 } from "../_shared/index.ts";
@@ -17,10 +18,10 @@ Deno.serve(async (req) => {
     return new Response("ok", { headers: corsHeaders });
   }
 
-  const { date } = await req.json();
+  const { date, movieId } = await req.json();
 
   try {
-    const data = await scanTorrents(date);
+    const data = await scanTorrents({ date, movieId });
     return new Response(JSON.stringify(data), {
       headers: { "Content-Type": "application/json", ...corsHeaders },
     });
@@ -32,8 +33,16 @@ Deno.serve(async (req) => {
   }
 });
 
-async function scanTorrents(date: string) {
-  const movies = (await getMovies(date)).filter((x) => x.imdb);
+async function scanTorrents({
+  date,
+  movieId,
+}: {
+  date?: string;
+  movieId?: number;
+}) {
+  const movies = date
+    ? (await getMovies(date)).filter((x) => x.imdb)
+    : await getMovie(movieId!);
   const supabase = getSupabaseClient();
   const output: string[] = [];
 
