@@ -18,15 +18,60 @@
       integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC"
       crossorigin="anonymous"
     />
+
+    <script src="https://cdn.dashjs.org/latest/dash.all.min.js"></script>
+
+    <style>
+      #audio {
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        position: fixed;
+        right: 10px;
+        top: 10px;
+      }
+
+      #audio > * {
+        background: white;
+        text-align: center;
+        padding: 2px 4px;
+        border-radius: 2px;
+      }
+
+      #audio > .active {
+        background: aqua;
+      }
+    </style>
   </head>
   <body class="bg-dark">
     <div class="vw-100 vh-100 d-flex align-items-center">
       <video class="w-100 h-100" data-dashjs-player autoplay controls></video>
+      <div id="audio"></div>
     </div>
 
     <script>
-      $("video").attr("src", window.location.search.replace("?s=", ""));
-      $.getScript("https://cdn.dashjs.org/latest/dash.all.min.js");
+      const url = window.location.search.replace("?s=", "");
+      const player = dashjs.MediaPlayer().create();
+      player.initialize(document.querySelector("video"), url, true);
+      player.on("streamInitialized", () => {
+        const tracks = player.getTracksFor("audio");
+        const current = player.getCurrentTrackFor("audio").id;
+
+        tracks.forEach((track) => {
+          const element = document.createElement("div");
+          element.role = "button";
+          element.textContent = track.lang;
+          if (current == track.id) element.className = "active";
+
+          const parent = document.getElementById("audio");
+          element.onclick = () => {
+            parent.querySelectorAll("div").forEach((e) => (e.className = ""));
+            element.className = "active";
+            player.setCurrentTrack(track);
+          };
+          parent.appendChild(element);
+        });
+      });
     </script>
   </body>
 </html>
