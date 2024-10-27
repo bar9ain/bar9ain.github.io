@@ -1,4 +1,0 @@
-#EXTM3U
-#EXT-X-MEDIA:TYPE=SUBTITLES,GROUP-ID="subs",NAME="Vietnamese",DEFAULT=YES,AUTOSELECT=YES,FORCED=NO,LANGUAGE="vi",URI="the-tunnel-to-summer-the-exit-of-goodbyes-2022/sub.m3u8"
-#EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=140,RESOLUTION=1920x1080,SUBTITLES="subs"
-the-tunnel-to-summer-the-exit-of-goodbyes-2022/video.m3u8

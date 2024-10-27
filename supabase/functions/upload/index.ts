@@ -67,20 +67,21 @@ Deno.serve(async (req) => {
 
       const contentType = res.headers.get("content-type") as string;
       const file = createFile(content, contentType);
-
-      switch (contentType) {
-        case "application/vnd.apple.mpegurl":
-        case "audio/mpegurl":
-          return await handleM3u8(processM3U(content, url), {
-            subPath,
-            lang,
-            id,
-            isRaw,
-          });
-
-        default:
-          return await handleDash(file, { subPath, id, lang, isRaw });
+      if (
+        contentType === "application/vnd.apple.mpegurl" ||
+        contentType === "audio/mpegurl" ||
+        url.endsWith(".m3u8") ||
+        url.endsWith(".m3u")
+      ) {
+        return await handleM3u8(processM3U(content, url), {
+          subPath,
+          lang,
+          id,
+          isRaw,
+        });
       }
+
+      return await handleDash(file, { subPath, id, lang, isRaw });
     }
 
     throw new Error("Upload failed");
@@ -153,13 +154,11 @@ ${id}_raw.m3u8`;
 async function handleDash(file, { lang, subPath, id, isRaw }) {
   const supabase = getSupabaseClient();
 
-  const path = subPath
-    ? await processXML(new TextDecoder().decode(file.content.buffer), {
-        path: `dash/${id}.mpd`,
-        subPath,
-        lang,
-      })
-    : await upload(file, `dash/${id}.mpd`);
+  const path = await processXML(new TextDecoder().decode(file.content.buffer), {
+    path: `dash/${id}.mpd`,
+    subPath,
+    lang,
+  });
 
   await supabase
     .from("cinema")
@@ -181,19 +180,21 @@ async function processXML(text, { subPath, lang = "en", path }) {
     (x) => x._attributes.height == "1080" || x._attributes.width == "1920"
   );
 
-  xml.MPD.Period.AdaptationSet.push({
-    _attributes: {
-      mimeType: "text/vtt",
-      lang,
-    },
-    Representation: {
+  if (subPath) {
+    xml.MPD.Period.AdaptationSet.push({
       _attributes: {
-        id: "caption",
-        bandwidth: "123",
+        mimeType: "text/vtt",
+        lang,
       },
-      BaseURL: subPath,
-    },
-  });
+      Representation: {
+        _attributes: {
+          id: "caption",
+          bandwidth: "123",
+        },
+        BaseURL: subPath,
+      },
+    });
+  }
 
   const content = js2xml(xml, {
     compact: true,

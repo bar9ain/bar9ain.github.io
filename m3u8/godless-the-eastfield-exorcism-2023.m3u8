@@ -1,4 +1,0 @@
-#EXTM3U
-#EXT-X-MEDIA:TYPE=SUBTITLES,GROUP-ID="subs",NAME="Vietnamese",DEFAULT=YES,AUTOSELECT=YES,FORCED=YES,LANGUAGE="vi",URI="../vtt/godless-the-eastfield-exorcism-2023.m3u8"
-#EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=800000,RESOLUTION=1920x1080,SUBTITLES="subs"
-https://vn03.quaivat.com/godless_the_eastfield_exorcism_2023/gtee_2023.m3u8
