@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>V-Cine</title>
+    <link rel="icon" href="favicon.png" />
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
+
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC"
+      crossorigin="anonymous"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn-uicons.flaticon.com/uicons-regular-rounded/css/uicons-regular-rounded.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn-uicons.flaticon.com/uicons-solid-rounded/css/uicons-solid-rounded.css"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdn-uicons.flaticon.com/uicons-bold-rounded/css/uicons-bold-rounded.css"
+    />
+  </head>
+  <body class="bg-white">
+    <div id="app">
+      <div
+        v-if="loading"
+        class="vh-100 vw-100 d-flex align-items-center justify-content-center position-fixed"
+      >
+        <img src="./images/loading.svg" width="100" />
+      </div>
+
+      <form @submit.prevent="upload">
+        <table class="table bg-white table-bordered align-middle">
+          <tbody>
+            <tr>
+              <td>File</td>
+              <td>
+                <input
+                  class="form-control"
+                  type="file"
+                  @change="event => form.raw = event.target.files[0]"
+                />
+              </td>
+            </tr>
+            <tr>
+              <td>URL</td>
+              <td>
+                <input class="form-control" v-model="form.url" />
+              </td>
+            </tr>
+            <tr>
+              <td>Subtitle</td>
+              <td>
+                <input
+                  class="form-control"
+                  type="file"
+                  @change="event => form.sub = event.target.files[0]"
+                />
+              </td>
+            </tr>
+            <tr>
+              <td>Language</td>
+              <td>
+                <select v-model="form.lang" class="form-select">
+                  <option></option>
+                  <option value="en">English</option>
+                  <option value="vi">Vietnamese</option>
+                </select>
+              </td>
+            </tr>
+            <tr class="text-end">
+              <td colspan="2">
+                <button
+                  type="button"
+                  class="btn btn-secondary"
+                  @click="sendSignal('close')"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  class="btn btn-primary ms-2"
+                  :disabled="loading"
+                >
+                  Save
+                </button>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </form>
+    </div>
+
+    <script>
+      const { createClient } = supabase;
+      const client = createClient(
+        "https://oxcdjkfjxwbwjooheeqn.supabase.co",
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im94Y2Rqa2ZqeHdid2pvb2hlZXFuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjY3MjU5MzAsImV4cCI6MjA0MjMwMTkzMH0.SRQlvn5BUh_NEzjMIBfETZ6GHWMQM7udm58fLQKrExc"
+      );
+      const { createApp, ref, reactive, onMounted, computed } = Vue;
+
+      createApp({
+        setup() {
+          const id = window.location.search.replace("?id=", "");
+
+          const form = reactive({
+            id,
+            raw: null,
+            sub: null,
+            lang: null,
+            url: null,
+          });
+          const loading = ref(false);
+
+          async function upload() {
+            try {
+              loading.value = true;
+
+              const formData = new FormData();
+              Object.entries(form).forEach(([key, value]) => {
+                if (value) {
+                  formData.append(key, value);
+                }
+              });
+
+              const { data, error } = await client.functions.invoke("upload", {
+                body: formData,
+              });
+
+              if (error) {
+                throw new Error(await error.context.text());
+              }
+
+              sendSignal("update");
+              sendSignal("close");
+
+              loading.value = false;
+            } catch (e) {
+              alert(e.message);
+            } finally {
+              loading.value = false;
+            }
+          }
+
+          function sendSignal(message) {
+            window.top.postMessage(message, window.location.origin);
+          }
+
+          onMounted(async () => {
+            window.addEventListener("keyup", (e) => {
+              if (e.keyCode === 27) {
+                sendSignal("close");
+              }
+            });
+          });
+
+          return {
+            loading,
+            form,
+            upload,
+            sendSignal,
+          };
+        },
+      }).mount("#app");
+    </script>
+  </body>
+</html>

@@ -57,7 +57,8 @@ export async function getMovie(movieId: number) {
   const { data } = await supabase
     .from("cinema")
     .select("*, links (id, url, label)")
-    .eq("id", movieId);
+    .eq("id", movieId)
+    .single();
 
   return data;
 }

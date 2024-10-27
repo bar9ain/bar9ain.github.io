@@ -178,7 +178,7 @@
                   RAW
                 </span>
                 <i
-                  v-else-if="movie.video_url.includes('m3u') || movie.video_url.includes('dashtype')"
+                  v-else-if="movie.video_url.includes('m3u') || movie.video_url.includes('dashtype') || movie.video_url.includes('.mpd')"
                   class="fi fi-br-high-definition h5 mb-0 text-primary"
                 ></i>
                 <img v-else :src="getFavicon(movie.video_url)" />
@@ -269,6 +269,14 @@
                   class="fi fi-rr-edit ms-auto me-2"
                   @click="updateProp('video_url', movie)"
                 ></i>
+              </li>
+              <li v-if="isAdmin">
+                <a
+                  role="button"
+                  @click="iframeSrc = `/upload.html?id=${movie.id}`"
+                >
+                  Upload
+                </a>
               </li>
               <li><hr class="dropdown-divider" /></li>
               <li
@@ -481,7 +489,7 @@
               return `/player.html?s=${_url}`;
             }
 
-            if (url.includes("dashtype")) {
+            if (url.includes("dashtype") || url.includes(".mpd")) {
               return `/dash.html?s=${_url}`;
             }
 

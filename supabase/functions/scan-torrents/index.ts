@@ -42,7 +42,7 @@ async function scanTorrents({
 }) {
   const movies = date
     ? (await getMovies(date)).filter((x) => x.imdb)
-    : await getMovie(movieId!);
+    : [await getMovie(movieId!)];
   const supabase = getSupabaseClient();
   const output: string[] = [];
 
