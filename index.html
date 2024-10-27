@@ -486,15 +486,15 @@
                 return url;
               }
 
-              return `/player.html?s=${_url}`;
+              return `/play.html?id=${video.id}`;
             }
 
             if (url.includes("dashtype") || url.includes(".mpd")) {
-              return `/dash.html?s=${_url}`;
+              return `/play.html?id=${video.id}`;
             }
 
             if (url.includes(".mp4")) {
-              return `https://www.hlsplayer.net/embed?type=mp4&src=${_url}`;
+              return `/play.html?id=${video.id}`;
             }
 
             return url;

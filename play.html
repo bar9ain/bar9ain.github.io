@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>V-Cine</title>
+    <link rel="icon" href="favicon.png" />
+
+    <link
+      href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css"
+      rel="stylesheet"
+      integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC"
+      crossorigin="anonymous"
+    />
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/venom-player@0.2.88/dist/player.js"></script>
+
+    <style>
+      .plyr {
+        width: 100%;
+        height: 100%;
+      }
+
+      .plyr__captions .plyr__caption {
+        font-size: 5vh !important;
+      }
+    </style>
+  </head>
+  <body class="bg-dark vw-100 vh-100">
+    <div class="vw-100 vh-100 d-flex align-items-center">
+      <div id="player"></div>
+    </div>
+
+    <script>
+      document.addEventListener("DOMContentLoaded", async () => {
+        const id = window.location.search.replace("?id=", "");
+        if (!id) return alert("No ID");
+
+        const { createClient } = supabase;
+        const client = createClient(
+          "https://oxcdjkfjxwbwjooheeqn.supabase.co",
+          "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im94Y2Rqa2ZqeHdid2pvb2hlZXFuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjY3MjU5MzAsImV4cCI6MjA0MjMwMTkzMH0.SRQlvn5BUh_NEzjMIBfETZ6GHWMQM7udm58fLQKrExc"
+        );
+
+        const { data: video } = await client
+          .from("cinema")
+          .select("video_url")
+          .eq("id", id)
+          .single();
+
+        if (!video) return alert("Video not found");
+
+        VenomPlayer.make({
+          source: {
+            dash: `${client.storageUrl}/object/public/media/dash/${id}.mpd`,
+            hls: video.video_url,
+            file: video.video_url,
+            cc: [
+              {
+                url: `${client.storageUrl}/object/public/media/vtt/${id}.vtt`,
+                name: "Default",
+              },
+            ],
+          },
+          quality: 1080,
+          qualityByWidth: { 1280: 720, 1920: 1080, 864: 480 },
+          doNotSaveProgress: false,
+        });
+      });
+    </script>
+  </body>
+</html>

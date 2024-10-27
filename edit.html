@@ -88,6 +88,10 @@
                     height="24"
                   />
                 </a>
+                <input
+                  class="form-control d-inline-block w-auto mx-2"
+                  v-model="movie.rate"
+                />
               </td>
             </tr>
             <tr>
@@ -103,10 +107,7 @@
             <tr>
               <td>Video URL</td>
               <td>
-                <input
-                  class="form-control"
-                  v-model="movie.video_url"
-                />
+                <input class="form-control" v-model="movie.video_url" />
               </td>
             </tr>
             <tr>
@@ -211,6 +212,7 @@
               video_url: movie.value.video_url,
               subs_link: movie.value.subs_link,
               countries: selectedCountries.value,
+              rate: movie.value.rate,
               romanized: [
                 jsrmvi.removeVI(movie.value.title, { concatBy: " " }),
                 jsrmvi.removeVI(movie.value.english, { concatBy: " " }),

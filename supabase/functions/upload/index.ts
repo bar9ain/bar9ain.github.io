@@ -59,18 +59,13 @@ Deno.serve(async (req) => {
     const url = form.fields.url;
     if (url) {
       const res = await fetch(url, {
-        headers: {
-          accept: "*/*",
-          "sec-fetch-dest": "empty",
-          "sec-fetch-mode": "cors",
-          "sec-fetch-site": "cross-site",
-          Referer: "https://api.ninsel.ws/",
-          "Referrer-Policy": "strict-origin-when-cross-origin",
-        },
         method: "GET",
+        redirect: "follow",
       });
-      const contentType = res.headers.get("content-type") as string;
       const content = await res.text();
+      if (content === "Gone") throw new Error("Gone");
+
+      const contentType = res.headers.get("content-type") as string;
       const file = createFile(content, contentType);
 
       switch (contentType) {
@@ -177,8 +172,6 @@ async function handleDash(file, { lang, subPath, id, isRaw }) {
 }
 
 async function processXML(text, { subPath, lang = "en", path }) {
-  if (text === "Gone") throw new Error("Gone");
-
   const xml = xml2js(text, { compact: true });
 
   const video = xml.MPD.Period.AdaptationSet.find(
