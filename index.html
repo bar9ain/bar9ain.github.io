@@ -145,8 +145,15 @@
             @contextmenu.prevent="showContext($event, movie)"
           />
           <span
+            v-if="movie.content_rating"
+            class="position-absolute top-0 start-0 badge bg-danger text-white shadow mt-2 ms-2"
+          >
+            {{movie.content_rating}}
+          </span>
+          <span
             v-if="movie.rate"
             class="position-absolute top-0 end-0 badge rounded-pill bg-warning text-dark shadow mt-2 me-2"
+            @click="isAdmin && (iframeSrc = '/edit.html?id=' + movie.id)"
           >
             {{movie.rate}}
           </span>

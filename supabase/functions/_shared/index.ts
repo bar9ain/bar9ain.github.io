@@ -73,7 +73,9 @@ export function formatFileSize(bytes, decimalPoint) {
 }
 
 export async function inspect(url) {
-  const response = await fetch(url).then((r) => r.text());
+  const response = await fetch(url, {
+    headers: { "Accept-Language": "en" },
+  }).then((r) => r.text());
   return cheerio.load(response);
 }
 

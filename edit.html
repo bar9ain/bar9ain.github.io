@@ -92,6 +92,9 @@
                   class="form-control d-inline-block w-auto mx-2"
                   v-model="movie.rate"
                 />
+                <span v-if="movie.imdb" role="button" @click="fetchImdb">
+                  <i class="fi fi-br-download"></i>
+                </span>
               </td>
             </tr>
             <tr>
@@ -118,6 +121,16 @@
                   v-model="movie.subs_link"
                   type="url"
                 />
+              </td>
+            </tr>
+            <tr>
+              <td>Genres</td>
+              <td>{{ (movie.genres || []).join(", ") }}</td>
+            </tr>
+            <tr>
+              <td>Content Rating</td>
+              <td>
+                <input class="form-control" v-model="movie.content_rating" />
               </td>
             </tr>
             <tr>
@@ -212,11 +225,13 @@
               video_url: movie.value.video_url,
               subs_link: movie.value.subs_link,
               countries: selectedCountries.value,
-              rate: movie.value.rate,
+              rate: movie.value.rate || null,
               romanized: [
                 jsrmvi.removeVI(movie.value.title, { concatBy: " " }),
                 jsrmvi.removeVI(movie.value.english, { concatBy: " " }),
               ].join("-"),
+              genres: movie.value.genres,
+              content_rating: movie.value.content_rating,
             };
             const { error } = await client
               .from("cinema")
@@ -232,6 +247,27 @@
 
           function sendSignal(message) {
             window.top.postMessage(message, window.location.origin);
+          }
+
+          async function fetchImdb() {
+            try {
+              loading.value = true;
+              const { data, error } = await client.functions.invoke(
+                "fetch-imdb",
+                { body: JSON.stringify({ id: movie.value.imdb }) }
+              );
+              if (error) throw new Error(error.message || error.details);
+
+              movie.value.english = data.english;
+              movie.value.rate = data.rate;
+              movie.value.genres = movie.value.genres || data.genre;
+              movie.value.countries = data.countries || movie.value.countries;
+              movie.value.year = data.year;
+            } catch (e) {
+              alert(e.message);
+            } finally {
+              loading.value = false;
+            }
           }
 
           onMounted(async () => {
@@ -254,6 +290,7 @@
             selectedCountries,
             updateMovie,
             sendSignal,
+            fetchImdb,
           };
         },
       }).mount("#app");

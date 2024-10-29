@@ -61,9 +61,20 @@
     <div id="app">
       <div
         v-if="loading"
-        class="vh-100 vw-100 d-flex align-items-center justify-content-center position-fixed"
+        style="background-color: rgba(0, 0, 0, 0.65)"
+        class="vh-100 vw-100 d-flex flex-column align-items-center justify-content-center position-fixed"
       >
         <img src="./images/loading.svg" width="100" />
+        <div
+          v-if="progress"
+          style="width: 300px; height: 10px; border-radius: 20px"
+          class="bg-dark"
+        >
+          <div
+            :style="{width: `${progress}%`, height: '10px', borderRadius: '20px', transition: 'all 1s'}"
+            class="bg-danger"
+          ></div>
+        </div>
       </div>
       <div
         class="container d-flex align-items-center p-3 justify-content-center border-bottom"
@@ -78,6 +89,22 @@
           <button
             type="button"
             class="btn btn-warning text-truncate small ms-auto"
+            :disabled="loading"
+            @click="updateScore"
+          >
+            Update Score
+          </button>
+          <button
+            type="button"
+            class="btn btn-danger text-truncate small"
+            :disabled="loading"
+            @click="updateMoveek"
+          >
+            Moveek
+          </button>
+          <button
+            type="button"
+            class="btn btn-warning text-truncate small"
             :disabled="loading"
             @click="scanImdb"
           >
@@ -124,6 +151,18 @@
                 <a :href="movie.moveek_url" target="_blank">
                   {{ movie.title}}
                 </a>
+                <span
+                  v-if="movie.rate"
+                  class="badge rounded-pill bg-warning text-dark ms-1"
+                >
+                  {{movie.rate}}
+                </span>
+                <span
+                  v-if="movie.content_rating"
+                  class="badge bg-dark text-white ms-1"
+                >
+                  {{movie.content_rating}}
+                </span>
                 <div class="small text-muted">
                   <img
                     v-for="country in movie.countries"
@@ -200,6 +239,7 @@
           const month = ref(new Date().toISOString().substr(0, 7));
           const loading = ref(false);
           const iframeSrc = ref(null);
+          const progress = ref(0);
 
           async function fetchMovies() {
             loading.value = true;
@@ -248,9 +288,12 @@
           }
 
           async function scanTorrents() {
-            const { data, error } = await client.functions.invoke("scan-torrents", {
-              body: JSON.stringify({ date: month.value }),
-            });
+            const { data, error } = await client.functions.invoke(
+              "scan-torrents",
+              {
+                body: JSON.stringify({ date: month.value }),
+              }
+            );
             if (error) throw new Error(error.message || error.details);
 
             return data;
@@ -267,6 +310,112 @@
 
           function editMovie(movie) {
             iframeSrc.value = "/edit.html?id=" + movie.id;
+          }
+
+          async function updateScore() {
+            loading.value = true;
+            let errors = false;
+            progress.value = 0;
+
+            const list = movies.value.filter((x) => x.imdb);
+
+            for await (const [i, movie] of list.entries()) {
+              try {
+                const { data, error } = await client.functions.invoke(
+                  "fetch-imdb",
+                  { body: JSON.stringify({ id: movie.imdb }) }
+                );
+                if (error) throw new Error(error.message || error.details);
+
+                const payload = {
+                  english: data.english,
+                  rate: data.rate,
+                  genres: movie.genres || data.genre,
+                  countries: data.countries,
+                  year: data.year,
+                };
+
+                payload.romanized = [
+                  jsrmvi.removeVI(movie.value.title, { concatBy: " " }),
+                  jsrmvi.removeVI(data.english, { concatBy: " " }),
+                ].join("-");
+
+                client
+                  .from("cinema")
+                  .update(payload)
+                  .eq("imdb", movie.imdb)
+                  .then();
+              } catch (e) {
+                console.log(e.message);
+                errors = true;
+              } finally {
+                progress.value = ((i + 1) / list.length) * 100;
+              }
+            }
+
+            await fetchMovies();
+            loading.value = false;
+
+            if (errors) {
+              alert("Check console for errors");
+            }
+
+            progress.value = 0;
+          }
+
+          async function updateMoveek() {
+            loading.value = true;
+            let errors = false;
+            progress.value = 0;
+
+            for await (const [i, movie] of movie.value.entries()) {
+              try {
+                const { data, error } = await client.functions.invoke(
+                  "fetch-moveek",
+                  { body: JSON.stringify({ url: movie.moveek_url }) }
+                );
+                if (error) throw new Error(error.message || error.details);
+
+                const payload = {
+                  english: movie.value.english || data.english,
+                  genres: movie.value.genres || data.genres,
+                  image: data.image,
+                };
+
+                if (data.release_date) {
+                  payload.release_date = data.release_date;
+                }
+
+                if (data.content_rating) {
+                  payload.content_rating = data.content_rating;
+                }
+
+                payload.romanized = [
+                  jsrmvi.removeVI(movie.value.title, { concatBy: " " }),
+                  jsrmvi.removeVI(data.english, { concatBy: " " }),
+                ].join("-");
+
+                client
+                  .from("cinema")
+                  .update(payload)
+                  .eq("imdb", movie.imdb)
+                  .then();
+              } catch (e) {
+                console.log(e.message);
+                errors = true;
+              } finally {
+                progress.value = ((i + 1) / movie.list.length) * 100;
+              }
+            }
+
+            await fetchMovies();
+            loading.value = false;
+
+            if (errors) {
+              alert("Check console for errors");
+            }
+
+            progress.value = 0;
           }
 
           onMounted(async () => {
@@ -292,11 +441,14 @@
             movies,
             loading,
             iframeSrc,
+            progress,
             fetchMovies,
             scanImdb,
             scanTorrentsAndSubs,
             scanFshare,
             editMovie,
+            updateScore,
+            updateMoveek,
           };
         },
       }).mount("#app");
