@@ -385,45 +385,54 @@
             let errors = false;
             progress.value = 0;
 
-            for await (const [i, movie] of movie.value.entries()) {
-              try {
-                const { data, error } = await client.functions.invoke(
-                  "fetch-moveek",
-                  { body: JSON.stringify({ url: movie.moveek_url }) }
-                );
-                if (error) throw new Error(error.message || error.details);
+            const list = movies.value;
 
-                const payload = {
-                  english: movie.value.english || data.english,
-                  genres: movie.value.genres || data.genres,
-                  image: data.image,
-                };
+            let done = 0;
 
-                if (data.release_date) {
-                  payload.release_date = data.release_date;
+            await Promise.all(
+              list.map((movie) => {
+                try {
+                  return client.functions
+                    .invoke("fetch-moveek", {
+                      body: JSON.stringify({ url: movie.moveek_url }),
+                    })
+                    .then(({ data, error }) => {
+                      if (error)
+                        throw new Error(error.message || error.details);
+
+                      const payload = {
+                        title: data.title,
+                        english: movie.english || data.english,
+                        image: data.image,
+                        genres: movie.genres || data.genres,
+                        release_date: data.release_date || movie.release_date,
+                        content_rating:
+                          data.content_rating || movie.content_rating,
+                      };
+
+                      payload.romanized = [
+                        jsrmvi.removeVI(payload.title, { concatBy: " " }),
+                        jsrmvi.removeVI(payload.english, { concatBy: " " }),
+                        jsrmvi.removeVI(movie.original_title, {
+                          concatBy: " ",
+                        }),
+                      ].join("-");
+
+                      return client
+                        .from("cinema")
+                        .update(payload)
+                        .eq("moveek_url", movie.moveek_url)
+                        .then(() => {
+                          done++;
+                          progress.value = ((done + 1) / list.length) * 100;
+                        });
+                    });
+                } catch (e) {
+                  console.log(e.message);
+                  errors = true;
                 }
-
-                if (data.content_rating) {
-                  payload.content_rating = data.content_rating;
-                }
-
-                payload.romanized = [
-                  jsrmvi.removeVI(movie.value.title, { concatBy: " " }),
-                  jsrmvi.removeVI(data.english, { concatBy: " " }),
-                ].join("-");
-
-                client
-                  .from("cinema")
-                  .update(payload)
-                  .eq("imdb", movie.imdb)
-                  .then();
-              } catch (e) {
-                console.log(e.message);
-                errors = true;
-              } finally {
-                progress.value = ((i + 1) / movie.list.length) * 100;
-              }
-            }
+              })
+            );
 
             await fetchMovies();
             loading.value = false;
