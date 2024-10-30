@@ -62,6 +62,12 @@
               </td>
             </tr>
             <tr>
+              <td>Original Title</td>
+              <td>
+                <input class="form-control" v-model="movie.original_title" />
+              </td>
+            </tr>
+            <tr>
               <td>Year</td>
               <td>
                 <input
@@ -219,6 +225,7 @@
             const data = {
               title: movie.value.title,
               english: movie.value.english,
+              original_title: movie.value.original_title,
               year: movie.value.year,
               imdb: movie.value.imdb,
               release_date: movie.value.release_date,
@@ -229,6 +236,7 @@
               romanized: [
                 jsrmvi.removeVI(movie.value.title, { concatBy: " " }),
                 jsrmvi.removeVI(movie.value.english, { concatBy: " " }),
+                jsrmvi.removeVI(movie.value.original_title, { concatBy: " " }),
               ].join("-"),
               genres: movie.value.genres,
               content_rating: movie.value.content_rating,
@@ -259,6 +267,7 @@
               if (error) throw new Error(error.message || error.details);
 
               movie.value.english = data.english;
+              movie.value.original_title = data.original_title;
               movie.value.rate = data.rate;
               movie.value.genres = movie.value.genres || data.genre;
               movie.value.countries = data.countries || movie.value.countries;

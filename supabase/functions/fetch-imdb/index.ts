@@ -39,9 +39,8 @@ async function scanImdb(id) {
       code: x.id,
     })),
     genres: (data.genres?.genres || []).map((x) => x.text),
-    english: [...new Set([data.originalTitleText?.text, data.titleText?.text])]
-      .filter((x) => x)
-      .join(" - "),
+    english: data.titleText?.text,
+    original_title: data.originalTitleText?.text,
     year: data.releaseYear?.year,
     rate: data.ratingsSummary?.aggregateRating,
   };

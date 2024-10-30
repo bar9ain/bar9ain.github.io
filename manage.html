@@ -163,7 +163,7 @@
                 >
                   {{movie.content_rating}}
                 </span>
-                <div class="small text-muted">
+                <div class="d-flex small text-muted align-items-start">
                   <img
                     v-for="country in movie.countries"
                     :key="country.code"
@@ -171,7 +171,12 @@
                     class="me-1"
                     :title="country.name"
                   />
-                  {{movie.english}} ({{movie.year}})
+                  <div>
+                    <div>{{movie.english}} ({{movie.year}})</div>
+                    <div v-if="movie.original_title != movie.english">
+                      {{movie.original_title}}
+                    </div>
+                  </div>
                 </div>
               </td>
               <td class="text-truncate">
@@ -319,39 +324,51 @@
 
             const list = movies.value.filter((x) => x.imdb);
 
-            for await (const [i, movie] of list.entries()) {
-              try {
-                const { data, error } = await client.functions.invoke(
-                  "fetch-imdb",
-                  { body: JSON.stringify({ id: movie.imdb }) }
-                );
-                if (error) throw new Error(error.message || error.details);
+            let done = 0;
 
-                const payload = {
-                  english: data.english,
-                  rate: data.rate,
-                  genres: movie.genres || data.genre,
-                  countries: data.countries,
-                  year: data.year,
-                };
+            await Promise.all(
+              list.map((movie) => {
+                try {
+                  return client.functions
+                    .invoke("fetch-imdb", {
+                      body: JSON.stringify({ id: movie.imdb }),
+                    })
+                    .then(({ data, error }) => {
+                      if (error)
+                        throw new Error(error.message || error.details);
 
-                payload.romanized = [
-                  jsrmvi.removeVI(movie.value.title, { concatBy: " " }),
-                  jsrmvi.removeVI(data.english, { concatBy: " " }),
-                ].join("-");
+                      const payload = {
+                        english: data.english,
+                        original_title: data.original_title,
+                        rate: data.rate,
+                        genres: movie.genres || data.genre,
+                        countries: data.countries?.length
+                          ? data.countries
+                          : movie.countries,
+                        year: data.year,
+                      };
 
-                client
-                  .from("cinema")
-                  .update(payload)
-                  .eq("imdb", movie.imdb)
-                  .then();
-              } catch (e) {
-                console.log(e.message);
-                errors = true;
-              } finally {
-                progress.value = ((i + 1) / list.length) * 100;
-              }
-            }
+                      payload.romanized = [
+                        jsrmvi.removeVI(movie.title, { concatBy: " " }),
+                        jsrmvi.removeVI(data.english, { concatBy: " " }),
+                        jsrmvi.removeVI(data.original_title, { concatBy: " " }),
+                      ].join("-");
+
+                      client
+                        .from("cinema")
+                        .update(payload)
+                        .eq("imdb", movie.imdb)
+                        .then(() => {
+                          done++;
+                          progress.value = ((done + 1) / list.length) * 100;
+                        });
+                    });
+                } catch (e) {
+                  console.log(e.message);
+                  errors = true;
+                }
+              })
+            );
 
             await fetchMovies();
             loading.value = false;
