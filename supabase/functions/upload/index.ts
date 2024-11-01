@@ -129,7 +129,7 @@ ${id}.vtt
 
       // Create index m3u8
       const indexm3u8 = `#EXTM3U
-#EXT-X-MEDIA:TYPE=SUBTITLES,GROUP-ID="subs",NAME="${lang}",DEFAULT=YES,AUTOSELECT=YES,FORCED=YES,LANGUAGE="${lang}",URI="../vtt/${id}.m3u8"
+#EXT-X-MEDIA:TYPE=SUBTITLES,GROUP-ID="subs",NAME="${lang}",DEFAULT=NO,AUTOSELECT=YES,FORCED=NO,LANGUAGE="${lang}",URI="../vtt/${id}.m3u8"
 #EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=800000,RESOLUTION=1920x1080,SUBTITLES="subs"
 ${id}_raw.m3u8`;
       return await upload(
