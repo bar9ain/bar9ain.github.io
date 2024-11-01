@@ -40,11 +40,18 @@
       rel="stylesheet"
       href="https://cdn-uicons.flaticon.com/uicons-bold-rounded/css/uicons-bold-rounded.css"
     />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap"
+      rel="stylesheet"
+    />
 
     <style>
       #app {
         overflow-x: hidden;
         min-height: 100vh;
+        font-family: "Inter", sans-serif;
       }
 
       .iframe iframe {
@@ -161,7 +168,7 @@
             class="card-body"
             @click="isAdmin && (iframeSrc = movie.moveek_url)"
           >
-            <div class="card-title fw-bold">{{movie.title}}</div>
+            <div class="card-title small fw-bold mb-0">{{movie.title}}</div>
             <div
               class="card-text small text-muted text-truncate"
               v-if="movie.english"
