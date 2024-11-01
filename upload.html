@@ -154,7 +154,25 @@
             window.top.postMessage(message, window.location.origin);
           }
 
+          async function getMovie() {
+            loading.value = true;
+            const { data } = await client
+              .from("cinema")
+              .select("video_url")
+              .eq("id", id)
+              .single();
+
+            if (data.video_url) {
+              form.lang = data.video_url.endsWith("raw") ? "en" : "vi";
+            } else {
+              form.lang = "en";
+            }
+
+            loading.value = false;
+          }
+
           onMounted(async () => {
+            getMovie();
             window.addEventListener("keyup", (e) => {
               if (e.keyCode === 27) {
                 sendSignal("close");

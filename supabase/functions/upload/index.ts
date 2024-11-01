@@ -30,16 +30,15 @@ Deno.serve(async (req) => {
       throw new Error("Movie not found");
     }
 
-    if (!form.files.raw && !form.fields.url) {
-      throw new Error("File not found");
+    if (!form.files.raw && !form.fields.url && !form.files.sub) {
+      throw new Error("Please select a file or enter URL");
     }
 
+    const supabase = getSupabaseClient();
     const sub = form.files.sub;
-    let subPath = "";
+    const subPath = `${supabase.supabaseUrl}/storage/v1/object/public/media/vtt/${id}.vtt`;
 
-    if (sub) {
-      subPath = await upload(sub, `vtt/${id}.vtt`);
-    }
+    if (sub) await uploadSubtitle(sub, id);
 
     const raw = form.files.raw;
     const lang = form.fields.lang || "en";
@@ -49,7 +48,7 @@ Deno.serve(async (req) => {
       switch (raw.contentType) {
         case "application/vnd.apple.mpegurl":
         case "audio/mpegurl":
-          return await handleM3u8(raw, { subPath, lang, id, isRaw });
+          return await handleM3u8(raw, { lang, id, isRaw });
 
         default:
           return await handleDash(raw, { subPath, lang, id, isRaw });
@@ -74,7 +73,6 @@ Deno.serve(async (req) => {
         url.endsWith(".m3u")
       ) {
         return await handleM3u8(processM3U(content, url), {
-          subPath,
           lang,
           id,
           isRaw,
@@ -84,7 +82,9 @@ Deno.serve(async (req) => {
       return await handleDash(file, { subPath, id, lang, isRaw });
     }
 
-    throw new Error("Upload failed");
+    return new Response(JSON.stringify({ subPath }), {
+      headers: { "Content-Type": "application/json", ...corsHeaders },
+    });
   } catch (e) {
     return new Response(e.message, { status: 400, headers: corsHeaders });
   }
@@ -106,40 +106,21 @@ async function upload(file, path) {
   return `${supabase.supabaseUrl}/storage/v1/object/public/media/${path}`;
 }
 
-async function handleM3u8(raw, { lang, subPath, id, isRaw }) {
+async function handleM3u8(raw, { lang, id, isRaw }) {
   const supabase = getSupabaseClient();
 
-  const path = await (async () => {
-    if (subPath) {
-      // Create vtt m3u8
-      const length = getM3ULength(new TextDecoder().decode(raw.content.buffer));
-      const vttm3u8 = `#EXTM3U
-#EXT-X-TARGETDURATION:${length}
-#EXT-X-VERSION:3
-#EXT-X-MEDIA-SEQUENCE:1
-#EXT-X-PLAYLIST-TYPE:VOD
-#EXTINF:${length},
-${id}.vtt
-#EXT-X-ENDLIST
-  `;
-      await upload(createFile(vttm3u8, "text/vtt"), `vtt/${id}.m3u8`);
+  // Upload raw m3u8
+  await upload(raw, `m3u8/${id}_raw.m3u8`);
 
-      // Upload raw m3u8
-      await upload(raw, `m3u8/${id}_raw.m3u8`);
-
-      // Create index m3u8
-      const indexm3u8 = `#EXTM3U
+  // Create index m3u8
+  const indexm3u8 = `#EXTM3U
 #EXT-X-MEDIA:TYPE=SUBTITLES,GROUP-ID="subs",NAME="${lang}",DEFAULT=NO,AUTOSELECT=YES,FORCED=NO,LANGUAGE="${lang}",URI="../vtt/${id}.m3u8"
 #EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=800000,RESOLUTION=1920x1080,SUBTITLES="subs"
 ${id}_raw.m3u8`;
-      return await upload(
-        createFile(indexm3u8, "application/vnd.apple.mpegurl"),
-        `m3u8/${id}.m3u8`
-      );
-    }
-
-    return await upload(raw, `m3u8/${id}.m3u8`);
-  })();
+  const path = await upload(
+    createFile(indexm3u8, "application/vnd.apple.mpegurl"),
+    `m3u8/${id}.m3u8`
+  );
 
   await supabase
     .from("cinema")
@@ -180,21 +161,19 @@ async function processXML(text, { subPath, lang = "en", path }) {
     (x) => x._attributes.height == "1080" || x._attributes.width == "1920"
   );
 
-  if (subPath) {
-    xml.MPD.Period.AdaptationSet.push({
+  xml.MPD.Period.AdaptationSet.push({
+    _attributes: {
+      mimeType: "text/vtt",
+      lang,
+    },
+    Representation: {
       _attributes: {
-        mimeType: "text/vtt",
-        lang,
+        id: "caption",
+        bandwidth: "123",
       },
-      Representation: {
-        _attributes: {
-          id: "caption",
-          bandwidth: "123",
-        },
-        BaseURL: subPath,
-      },
-    });
-  }
+      BaseURL: subPath,
+    },
+  });
 
   const content = js2xml(xml, {
     compact: true,
@@ -253,6 +232,38 @@ function getM3ULength(content: string) {
   }
 
   return Math.ceil(length);
+}
+
+function getSubLength(content: string) {
+  try {
+    const list = content.split("\n").reverse();
+    const last = list.find((x) =>
+      /\d{2}:\d{2}:\d{2}\.\d{3} --> \d{2}:\d{2}:\d{2}\.\d{3}/.test(x)
+    );
+    const time = last?.split(" ").pop();
+    const [h, m, s] = time!.split(":").map((x) => parseInt(x));
+    return (h * 60 + m) * 60 + s;
+  } catch {
+    return 9000;
+  }
+}
+
+async function uploadSubtitle(file: ReturnType<typeof createFile>, id: number) {
+  await upload(file, `vtt/${id}.vtt`);
+  console.log("uploaded vtt file");
+
+  const length = getSubLength(new TextDecoder().decode(file.content.buffer));
+  const vttm3u8 = `#EXTM3U
+#EXT-X-TARGETDURATION:${length}
+#EXT-X-VERSION:3
+#EXT-X-MEDIA-SEQUENCE:10
+#EXT-X-PLAYLIST-TYPE:VOD
+#EXTINF:${length},
+${id}.vtt
+#EXT-X-ENDLIST
+  `;
+  await upload(createFile(vttm3u8, "text/vtt"), `vtt/${id}.m3u8`);
+  console.log("uploaded m3u8 file");
 }
 
 /* To invoke locally:
