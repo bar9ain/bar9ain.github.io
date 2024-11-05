@@ -4,12 +4,16 @@
 
 // Setup type definitions for built-in Supabase Runtime APIs
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
-import { multiParser } from "https://deno.land/x/multiparser@0.114.0/mod.ts";
+import {
+  FormFile,
+  multiParser,
+} from "https://deno.land/x/multiparser@0.114.0/mod.ts";
 import { getMovie, getSupabaseClient } from "../_shared/index.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 import { xml2js } from "https://deno.land/x/xml2js@1.0.0/mod.ts";
 import { js2xml } from "https://deno.land/x/js2xml@1.0.3/mod.ts";
 import * as path from "https://deno.land/std@0.224.0/path/mod.ts";
+import { srtToVtt } from "../_shared/srt2vtt.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -90,7 +94,7 @@ Deno.serve(async (req) => {
   }
 });
 
-async function upload(file, path) {
+async function upload(file, path: string) {
   const supabase = getSupabaseClient();
 
   const { error } = await supabase.storage
@@ -106,7 +110,7 @@ async function upload(file, path) {
   return `${supabase.supabaseUrl}/storage/v1/object/public/media/${path}`;
 }
 
-async function handleM3u8(raw, { lang, id, isRaw }) {
+async function handleM3u8(raw: FormFile, { lang, id, isRaw }) {
   const supabase = getSupabaseClient();
 
   // Upload raw m3u8
@@ -196,7 +200,7 @@ function processM3U(content: string, url: string) {
   const root = url.replace("https://", "").split("/");
   root.pop();
 
-  let list = content.split("\n");
+  const list = content.split("\n");
 
   const ad = "#EXTINF:2.902900,";
 
@@ -248,8 +252,13 @@ function getSubLength(content: string) {
   }
 }
 
-async function uploadSubtitle(file: ReturnType<typeof createFile>, id: number) {
-  await upload(file, `vtt/${id}.vtt`);
+async function uploadSubtitle(file: FormFile, id: number) {
+  if (file.filename.endsWith(".srt")) {
+    const vtt = srtToVtt(file.content.buffer);
+    await upload(createFile(vtt, "text/vtt;charset=utf-8"), `vtt/${id}.vtt`);
+  } else {
+    await upload(file, `vtt/${id}.vtt`);
+  }
   console.log("uploaded vtt file");
 
   const length = getSubLength(new TextDecoder().decode(file.content.buffer));
@@ -262,7 +271,7 @@ async function uploadSubtitle(file: ReturnType<typeof createFile>, id: number) {
 ${id}.vtt
 #EXT-X-ENDLIST
   `;
-  await upload(createFile(vttm3u8, "text/vtt"), `vtt/${id}.m3u8`);
+  await upload(createFile(vttm3u8, "application/vnd.apple.mpegurl"), `vtt/${id}.m3u8`);
   console.log("uploaded m3u8 file");
 }
 

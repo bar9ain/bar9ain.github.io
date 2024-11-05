@@ -46,62 +46,70 @@ async function scanTorrents({
   const supabase = getSupabaseClient();
   const output: string[] = [];
 
-  for await (const movie of movies) {
-    if (movie.links.filter((x) => x.url.startsWith("magnet:")).length) continue;
-
-    const res = await fetch(
-      "https://apibay.org/q.php?q=" + movie.imdb + "&cat=211,207"
-    ).then((r) => r.json());
-
-    let torrents = res.filter((x) => x.id != 0);
-
-    if (
-      torrents.some(
-        (x) =>
-          x.name.includes("YTS.") ||
-          x.username === "GalaxyRG" ||
-          x.name.endsWith("RARBG")
-      )
-    ) {
-      torrents = torrents.filter(
-        (x) =>
-          x.name.includes("YTS.") ||
-          x.username === "GalaxyRG" ||
-          x.name.endsWith("RARBG")
-      );
-    } else {
-      torrents = torrents.filter(
-        (x) => !x.name.toLowerCase().includes("telesync")
-      );
-
-      if (torrents.length >= 7) {
-        torrents = torrents.filter((x) => x.status === "vip");
+  await Promise.all(
+    movies.map(async (movie) => {
+      if (movie.links.filter((x) => x.url.startsWith("magnet:")).length) {
+        return Promise.resolve();
       }
 
-      if (torrents.length >= 7) {
-        torrents = _.orderBy(
-          torrents,
-          ["seeders", "leechers"],
-          ["desc", "desc"]
-        ).slice(0, 7);
+      const res = await fetch(
+        "https://apibay.org/q.php?q=" + movie.imdb + "&cat=211,207"
+      ).then((r) => r.json());
+
+      let torrents = res.filter((x) => x.id != 0);
+
+      if (
+        torrents.some(
+          (x) =>
+            x.name.includes("YTS.") ||
+            x.username === "GalaxyRG" ||
+            x.name.endsWith("RARBG")
+        )
+      ) {
+        torrents = torrents.filter(
+          (x) =>
+            x.name.includes("YTS.") ||
+            x.username === "GalaxyRG" ||
+            x.name.endsWith("RARBG")
+        );
+      } else {
+        torrents = torrents.filter(
+          (x) => !x.name.toLowerCase().includes("telesync")
+        );
+
+        if (torrents.length >= 7) {
+          torrents = torrents.filter((x) => x.status === "vip");
+        }
+
+        if (torrents.length >= 7) {
+          torrents = _.orderBy(
+            torrents,
+            ["seeders", "leechers"],
+            ["desc", "desc"]
+          ).slice(0, 7);
+        }
       }
-    }
 
-    torrents = torrents.map((x) => ({
-      movie_id: movie.id,
-      label: [x.name, formatFileSize(x.size, 2)].join(" | "),
-      url: `magnet:?xt=urn:btih:${x.info_hash}&dn=${encodeURIComponent(
-        x.name
-      )}&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337&tr=udp%3A%2F%2Fopen.stealth.si%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce&tr=udp%3A%2F%2Ftracker.bittor.pw%3A1337%2Fannounce&tr=udp%3A%2F%2Fpublic.popcorn-tracker.org%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.dler.org%3A6969%2Fannounce&tr=udp%3A%2F%2Fexodus.desync.com%3A6969&tr=udp%3A%2F%2Fopen.demonii.com%3A1337%2Fannounce`,
-    }));
+      torrents = torrents.map((x) => ({
+        movie_id: movie.id,
+        label: [x.name, formatFileSize(x.size, 2)].join(" | "),
+        url: `magnet:?xt=urn:btih:${x.info_hash}&dn=${encodeURIComponent(
+          x.name
+        )}&tr=udp%3A%2F%2Ftracker.opentrackr.org%3A1337&tr=udp%3A%2F%2Fopen.stealth.si%3A80%2Fannounce&tr=udp%3A%2F%2Ftracker.torrent.eu.org%3A451%2Fannounce&tr=udp%3A%2F%2Ftracker.bittor.pw%3A1337%2Fannounce&tr=udp%3A%2F%2Fpublic.popcorn-tracker.org%3A6969%2Fannounce&tr=udp%3A%2F%2Ftracker.dler.org%3A6969%2Fannounce&tr=udp%3A%2F%2Fexodus.desync.com%3A6969&tr=udp%3A%2F%2Fopen.demonii.com%3A1337%2Fannounce`,
+      }));
 
-    if (!torrents.length) continue;
+      if (!torrents.length) {
+        return Promise.resolve();
+      }
 
-    const { error } = await supabase.from("links").insert(torrents);
-    if (error) output.push(error.message || error.details);
-    else
-      output.push(`Updated ${torrents.length} torrents for [${movie.title}]`);
-  }
+      const { error } = await supabase.from("links").insert(torrents);
+      if (error) output.push(error.message || error.details);
+      else
+        output.push(`Updated ${torrents.length} torrents for [${movie.title}]`);
+
+      return Promise.resolve();
+    })
+  );
 
   return output;
 }

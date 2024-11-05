@@ -38,13 +38,16 @@ async function searchFshare(date) {
   const movies = await getMovies(date);
   const list = movies.filter((x) => x.video_url || x.links.length);
   const output: any = [];
-  for await (const movie of list) {
-    if (movie.links.filter((x) => x.url.includes("fshare.vn")).length) continue;
+  await Promise.all(
+    list.map(async (movie: any) => {
+      if (movie.links.filter((x: any) => x.url.includes("fshare.vn")).length)
+        return;
 
-    const record = await scanTvCine(movie);
-    if (record) output.push(record);
-    else output.push(await scanFshareGG(movie));
-  }
+      const record = await scanTvCine(movie);
+      if (record) output.push(record);
+      else output.push(await scanFshareGG(movie));
+    })
+  );
 
   if (!output.length) return [];
 

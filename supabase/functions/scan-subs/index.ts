@@ -5,7 +5,7 @@
 // Setup type definitions for built-in Supabase Runtime APIs
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { corsHeaders } from "../_shared/cors.ts";
-import { getSupabaseClient } from "../_shared/index.ts";
+import { getMovies, getSupabaseClient } from "../_shared/index.ts";
 import * as _ from "https://cdn.jsdelivr.net/npm/lodash@4.17.21/lodash.min.js";
 
 Deno.serve(async (req) => {
@@ -28,34 +28,39 @@ Deno.serve(async (req) => {
   }
 });
 
-async function scanSubs(movies) {
+async function scanSubs(date: string) {
   const output: string[] = [];
   const supabase = getSupabaseClient();
+  const movies = (await getMovies(date)).filter((x) => x.imdb && !x.subs_link);
 
-  for await (const movie of movies) {
-    if (movie.subs_link) continue;
+  await Promise.all(
+    movies.map(async (movie) => {
+      if (movie.subs_link) return Promise.resolve();
 
-    const result = await fetch("https://api.subsource.net/api/searchMovie", {
-      headers: {
-        accept: "application/json, text/plain, */*",
-        "content-type": "application/json",
-      },
-      body: `{\"query\":\"${movie.imdb}\"}`,
-      method: "POST",
-    }).then((r) => r.json());
-    if (result.found.length) {
-      const subs_link = `https://subsource.net/subtitles/${result.found[0].linkName}`;
-      const { data } = await supabase
-        .from("cinema")
-        .update({ subs_link })
-        .eq("imdb", movie.imdb)
-        .select();
+      const result = await fetch("https://api.subsource.net/api/searchMovie", {
+        headers: {
+          accept: "application/json, text/plain, */*",
+          "content-type": "application/json",
+        },
+        body: `{\"query\":\"${movie.imdb}\"}`,
+        method: "POST",
+      }).then((r) => r.json());
+      if (result.found.length) {
+        const subs_link = `https://subsource.net/subtitles/${result.found[0].linkName}`;
+        const { data } = await supabase
+          .from("cinema")
+          .update({ subs_link })
+          .eq("imdb", movie.imdb)
+          .select();
 
-      if (data.length) {
-        output.push(`Updated subtitle link for [${data[0].title}]`);
+        if (data.length) {
+          output.push(`Updated subtitle link for [${data[0].title}]`);
+        }
       }
-    }
-  }
+
+      return Promise.resolve();
+    })
+  );
 
   return output;
 }
