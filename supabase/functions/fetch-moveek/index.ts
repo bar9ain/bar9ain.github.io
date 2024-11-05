@@ -7,15 +7,23 @@ import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 
 import { corsHeaders } from "../_shared/cors.ts";
 import { inspect } from "../_shared/index.ts";
+import { getSupabaseClient } from "../_shared/index.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
 
-  const { url } = await req.json();
+  const { url, date } = await req.json();
 
   try {
+    if (date) {
+      const data = await bulkUpdate(date);
+      return new Response(JSON.stringify(data), {
+        headers: { "Content-Type": "application/json", ...corsHeaders },
+      });
+    }
+
     const data = await scanMoveek(url);
     return new Response(JSON.stringify(data), {
       headers: { "Content-Type": "application/json", ...corsHeaders },
@@ -72,6 +80,36 @@ async function scanMoveek(url) {
   } catch {}
 
   return result;
+}
+
+async function bulkUpdate(date) {
+  const [y, m] = date.split("-");
+  const url = `https://moveek.com/phim-thang-${m}-${y}/`;
+  const $ = await inspect(url);
+  const titles = Array.from($(".row.grid .card")).map((x) => ({
+    title: $(x)
+      .find("a[href*='/lich-chieu/'], a[href*='/phim/']")
+      .first()
+      .attr("title"),
+    release_date:
+      `${y}-${m}-` +
+      $(x).find(".text-muted").first().text().trim().split("/").shift(),
+    image: $(x).find("img").first().attr("data-src"),
+    moveek_url:
+      "https://moveek.com" +
+      $(x)
+        .find("a[href*='/lich-chieu/'], a[href*='/phim/']")
+        .attr("href")
+        .replace("lich-chieu", "phim"),
+  }));
+
+  const supabase = getSupabaseClient();
+  const { data } = await supabase
+    .from("cinema")
+    .upsert(titles, { onConflict: "moveek_url", ignoreDuplicates: true })
+    .select();
+
+  return data;
 }
 
 /* To invoke locally:

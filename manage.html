@@ -385,6 +385,11 @@
             let errors = false;
             progress.value = 0;
 
+            await client.functions.invoke("fetch-moveek", {
+              body: JSON.stringify({ date: month.value }),
+            });
+
+            await fetchMovies();
             const list = movies.value;
 
             let done = 0;
