@@ -416,13 +416,11 @@
       );
       const { createApp, ref, onMounted, computed } = Vue;
 
-      const inKiosker = navigator.userAgent.includes("Kiosker");
-
       createApp({
         setup() {
           const movies = ref([]);
           const month = ref(new Date().toISOString().substr(0, 7));
-          const linkedOnly = ref(true);
+          const linkedOnly = ref(false);
           const filteredMovies = computed(() =>
             movies.value.filter((x) =>
               linkedOnly.value ? !!x.video_url : true
@@ -484,12 +482,6 @@
           function openLink(movie) {
             const url = resolveVideo(movie);
             if (!url) return;
-
-            if (inKiosker) {
-              window.location.href = url;
-              return;
-            }
-
             window.open(url, "_blank");
           }
 
@@ -504,10 +496,6 @@
             const _url = `${uri.origin}${uri.pathname}`;
 
             if (url.includes(".m3u")) {
-              if (inKiosker) {
-                return `/player.html?s=${_url}`;
-              }
-
               if (navigator.userAgent.includes("iPhone")) {
                 return url;
               }
