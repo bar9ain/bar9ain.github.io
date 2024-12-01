@@ -420,7 +420,7 @@
         setup() {
           const movies = ref([]);
           const month = ref(new Date().toISOString().substr(0, 7));
-          const linkedOnly = ref(false);
+          const linkedOnly = ref(true);
           const filteredMovies = computed(() =>
             movies.value.filter((x) =>
               linkedOnly.value ? !!x.video_url : true

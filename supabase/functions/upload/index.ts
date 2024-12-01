@@ -213,6 +213,10 @@ function processM3U(content: string, url: string) {
       list[i] = "";
     }
 
+    if (line.includes("adjump")) {
+      list[i - 1] = list[i] = "";
+    }
+
     if (line === ad) {
       for (let j = i - 1; j < i + 24; j++) {
         list[j] = "";
@@ -271,7 +275,10 @@ async function uploadSubtitle(file: FormFile, id: number) {
 ${id}.vtt
 #EXT-X-ENDLIST
   `;
-  await upload(createFile(vttm3u8, "application/vnd.apple.mpegurl"), `vtt/${id}.m3u8`);
+  await upload(
+    createFile(vttm3u8, "application/vnd.apple.mpegurl"),
+    `vtt/${id}.m3u8`
+  );
   console.log("uploaded m3u8 file");
 }
 
