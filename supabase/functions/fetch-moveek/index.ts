@@ -79,6 +79,10 @@ async function scanMoveek(url) {
       .trim();
   } catch {}
 
+  try {
+    result.trailer_id = $("[data-video-url]").first().attr("data-video-url");
+  } catch {}
+
   return result;
 }
 
