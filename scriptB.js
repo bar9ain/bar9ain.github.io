@@ -37,7 +37,7 @@ async function initClient() {
 
 if (location.hostname == "moveek.com") {
   $.getScript("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2");
-  $.getScript("https://unpkg.com/jsrmvi/dist/jsrmvi.min.js");
+  $.getScript("https://cdn.jsdelivr.net/jsrmvi/dist/jsrmvi.min.js");
 
   function inIframe() {
     try {
@@ -266,7 +266,7 @@ if (location.hostname == "subsource.net") {
   analyze();
   async function analyze() {
     $.getScript("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2");
-    $.getScript("https://unpkg.com/jsrmvi/dist/jsrmvi.min.js");
+    $.getScript("https://cdn.jsdelivr.net/jsrmvi/dist/jsrmvi.min.js");
 
     const id = window.location.search.replace("?imdb=", "");
     const result = await fetch("https://api.subsource.net/api/searchMovie", {
@@ -326,7 +326,7 @@ if (
   location.hostname == "yts.mx"
 ) {
   $.getScript("https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2");
-  $.getScript("https://unpkg.com/jsrmvi/dist/jsrmvi.min.js");
+  $.getScript("https://cdn.jsdelivr.net/jsrmvi/dist/jsrmvi.min.js");
 
   const imdb = document
     .querySelector('[href*="https://www.imdb.com/title/"]')
