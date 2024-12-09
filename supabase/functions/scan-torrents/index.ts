@@ -81,13 +81,13 @@ async function scanTorrents({
           torrents = torrents.filter((x) => x.status === "vip");
         }
 
-        if (torrents.length >= 7) {
-          torrents = _.orderBy(
-            torrents,
-            ["seeders", "leechers"],
-            ["desc", "desc"]
-          ).slice(0, 7);
-        }
+        // if (torrents.length >= 7) {
+        //   torrents = _.sortBy(
+        //     torrents,
+        //     ["seeders", "leechers"],
+        //     ["desc", "desc"]
+        //   ).slice(0, 7);
+        // }
       }
 
       torrents = torrents.map((x) => ({
