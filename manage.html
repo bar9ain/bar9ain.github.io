@@ -424,7 +424,7 @@
                         }),
                       ].join("-");
 
-                      return client
+                      client
                         .from("cinema")
                         .update(payload)
                         .eq("moveek_url", movie.moveek_url)
