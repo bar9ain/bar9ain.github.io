@@ -49,9 +49,12 @@
         <img src="./images/loading.svg" width="100" />
       </div>
 
-      <div v-if="movie" :style="{ '--bg-image': `url('${movie.image}')` }">
+      <div
+        v-if="movie"
+        :style="{ '--bg-image': `url('${thumbnail || movie.image}')` }"
+      >
         <div
-          class="relative w-100 max-h-[80vh] h-[calc(111vw_/_.65)] bg-black bg-[image:var(--bg-image)] bg-cover bg-center"
+          class="relative w-100 max-h-[85vh] h-[calc(144vw_/_.65)] bg-black bg-[image:var(--bg-image)] bg-cover bg-center"
         >
           <div class="absolute bottom-0 right-0 left-0 p-6 !pt-32 text-white">
             <div class="blur-bg"></div>
@@ -85,6 +88,7 @@
             </div>
 
             <div
+              v-if="movie.video_url"
               role="button"
               class="w-1/2 relative bg-white text-black text-center mt-4 rounded-md mx-auto p-2 font-medium"
               @click="openLink(movie)"
@@ -238,6 +242,15 @@
             getMovie();
           });
 
+          const thumbnail = computed(() => {
+            try {
+              return movie.value.posters.find((p) => p.type === "thumbnail")
+                .url;
+            } catch {
+              return null;
+            }
+          });
+
           const logo = computed(() => {
             try {
               return movie.value.posters.find((p) => p.type === "logo").url;
@@ -303,6 +316,7 @@
             movie,
             logo,
             releaseDate,
+            thumbnail,
             getFavicon,
             openLink,
             loading,

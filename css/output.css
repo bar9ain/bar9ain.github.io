@@ -732,6 +732,26 @@ video {
   height: 100%;
 }
 
+.h-\[calc\(133vw_\/_\.65\)\] {
+  height: calc(133vw / .65);
+}
+
+.h-\[calc\(155vw_\/_\.65\)\] {
+  height: calc(155vw / .65);
+}
+
+.h-\[calc\(200vw_\/_\.65\)\] {
+  height: calc(200vw / .65);
+}
+
+.h-\[calc\(245vw_\/_\.65\)\] {
+  height: calc(245vw / .65);
+}
+
+.h-\[calc\(144vw_\/_\.65\)\] {
+  height: calc(144vw / .65);
+}
+
 .max-h-\[80vh\] {
   max-height: 80vh;
 }
@@ -746,6 +766,14 @@ video {
 
 .max-h-\[2\.5vh\] {
   max-height: 2.5vh;
+}
+
+.max-h-\[90vh\] {
+  max-height: 90vh;
+}
+
+.max-h-\[85vh\] {
+  max-height: 85vh;
 }
 
 .w-auto {
