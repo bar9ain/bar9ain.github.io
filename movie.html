@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>V-Cine</title>
+    <link rel="icon" href="favicon.png" />
+
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/vue/3.5.13/vue.global.min.js"></script>
+    <script src="/js/jsrmvi.min.js"></script>
+
+    <link rel="stylesheet" href="./css/output.css" />
+
+    <style>
+      .blur-bg {
+        position: absolute;
+        inset: 0;
+        background-color: rgb(40, 40, 40, 0.5);
+        backdrop-filter: saturate(180%) blur(60px);
+        mask-image: linear-gradient(
+          to bottom,
+          transparent,
+          rgba(0, 0, 0, 0.068) 3.3%,
+          rgba(0, 0, 0, 0.145) 5.9%,
+          rgba(0, 0, 0, 0.227) 8.1%,
+          rgba(0, 0, 0, 0.313) 10.1%,
+          rgba(0, 0, 0, 0.401) 12.1%,
+          rgba(0, 0, 0, 0.49) 14.6%,
+          rgba(0, 0, 0, 0.578) 17.7%,
+          rgba(0, 0, 0, 0.661) 21.8%,
+          rgba(0, 0, 0, 0.74) 27.1%,
+          rgba(0, 0, 0, 0.812) 33.9%,
+          rgba(0, 0, 0, 0.875) 42.4%,
+          rgba(0, 0, 0, 0.927) 53%,
+          rgba(0, 0, 0, 0.966) 66%,
+          rgba(0, 0, 0, 0.991) 81.5%,
+          rgba(0, 0, 0, 0.991) 100%
+        );
+      }
+    </style>
+  </head>
+  <body class="bg-[#2d2d2d]">
+    <div id="app">
+      <div
+        v-if="loading"
+        class="h-screen w-screen flex fixed items-center justify-center bg-black/75"
+      >
+        <img src="./images/loading.svg" width="100" />
+      </div>
+
+      <div v-if="movie" :style="{ '--bg-image': `url('${movie.image}')` }">
+        <div
+          class="relative w-100 max-h-[80vh] h-[calc(111vw_/_.65)] bg-black bg-[image:var(--bg-image)] bg-cover bg-center"
+        >
+          <div class="absolute bottom-0 right-0 left-0 p-6 !pt-32 text-white">
+            <div class="blur-bg"></div>
+
+            <img
+              v-if="logo"
+              :src="logo"
+              class="relative max-h-[10vh] mx-auto mb-1"
+            />
+            <div v-else class="relative text-center text-2xl">
+              {{ movie.title }}
+            </div>
+
+            <img
+              v-if="releaseDate"
+              :src="releaseDate"
+              class="relative max-h-[2.5vh] mx-auto mb-1"
+            />
+            <div v-else class="relative text-center text-xs font-semibold">
+              {{ movie.release_date }}
+            </div>
+
+            <div class="text-xs font-semibold relative text-center mt-4">
+              {{movie.english}} · {{movie.year}}
+            </div>
+
+            <div
+              class="text-[11px] font-semibold relative text-center opacity-75"
+            >
+              {{movie.genres.join(", ")}}
+            </div>
+
+            <div
+              role="button"
+              class="w-1/2 relative bg-white text-black text-center mt-4 rounded-md mx-auto p-2 font-medium"
+              @click="openLink(movie)"
+            >
+              ▶ Xem
+            </div>
+
+            <div class="text-sm relative text-justify line-clamp-3 mt-4">
+              Scarlett Johansson and Channing Tatum star as a marketing maven
+              and a by-the-book launch director who team up for a mission set
+              against the high-stakes backdrop of NASA’s historic Apollo 11 moon
+              landing.
+            </div>
+
+            <div
+              class="flex flex-wrap space-x-3 mt-4 relative text-[#ebebf5] justify-center items-center"
+            >
+              <div
+                v-if="movie.content_rating"
+                class="text-[10px] leading-tight rounded-sm border border-[#ebebf5] px-1"
+              >
+                {{movie.content_rating}}
+              </div>
+              <div
+                v-if="movie.video_url"
+                class="text-[10px] leading-tight rounded-sm font-bold px-1 flex items-center justify-center text-black/50 bg-[#ebebf5] border border-[#ebebf5]"
+              >
+                HD
+              </div>
+              <div
+                v-if="movie.video_url && movie.video_url.endsWith('raw')"
+                class="text-[10px] leading-tight rounded-sm border border-[#ebebf5] px-1"
+              >
+                RAW
+              </div>
+              <div
+                v-if="movie.video_url && !movie.video_url.endsWith('raw')"
+                class="text-[10px] leading-tight rounded-sm border border-[#ebebf5] px-1"
+              >
+                VI
+              </div>
+              <div
+                v-if="movie.rate"
+                class="text-[10px] leading-tight rounded-sm font-bold px-1 flex items-center justify-center text-black/50 bg-amber-400 border border-amber-400"
+              >
+                {{movie.rate}}
+              </div>
+              <img
+                v-for="option in movie.countries"
+                :key="option.code"
+                :src="`https://flagsapi.com/${option.code}/shiny/24.png`"
+                class="h-5"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div v-if="movie.trailer_id" class="py-3 px-6 text-white">
+          <div class="mb-3 font-bold">Trailer</div>
+          <div class="pb-5">
+            <div class="w-full pt-[56.25%] rounded-xl relative overflow-hidden">
+              <iframe
+                class="w-full absolute h-full inset-0"
+                :src="`https://www.youtube.com/embed/${movie.trailer_id}`"
+              >
+              </iframe>
+            </div>
+          </div>
+        </div>
+
+        <div v-if="movie.links.length" class="py-3 px-6 text-white">
+          <div class="mb-3 font-bold">Tải về</div>
+          <div class="pb-5">
+            <a
+              v-for="link in movie.links"
+              :key="link.id"
+              :href="link.url"
+              class="flex items-center py-2 border-b"
+              target="_blank"
+              :title="link.label"
+            >
+              <img
+                v-if="link.url.startsWith('magnet:')"
+                src="./magnet.png"
+                height="14"
+                class="me-1"
+              />
+              <img
+                v-else
+                :src="getFavicon(link.url)"
+                height="14"
+                class="me-1"
+              />
+              <span class="line-clamp-1">
+                {{link.label || getUrlDisplay(link.url)}}
+              </span>
+            </a>
+          </div>
+        </div>
+
+        <div v-if="movie.subtitles.length" class="py-3 px-6 text-white">
+          <div class="mb-3 font-bold">Tải về</div>
+          <div class="pb-5">
+            <a
+              v-for="link in movie.subtitles"
+              :key="link.id"
+              :href="link.url"
+              class="flex items-center py-2 border-b"
+              target="_blank"
+              :title="link.label"
+            >
+              <img
+                :src="`https://flagsapi.com/${link.lang == 'vi' ? 'VN' :
+              link.lang == 'en' ? 'GB' : ''}/shiny/24.png`"
+                height="14"
+                class="me-1"
+              />
+              <span class="line-clamp-1"> {{link.lang}} </span>
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      const { createClient } = supabase;
+      const client = createClient(
+        "https://oxcdjkfjxwbwjooheeqn.supabase.co",
+        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im94Y2Rqa2ZqeHdid2pvb2hlZXFuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3MjY3MjU5MzAsImV4cCI6MjA0MjMwMTkzMH0.SRQlvn5BUh_NEzjMIBfETZ6GHWMQM7udm58fLQKrExc"
+      );
+      const { createApp, ref, onMounted, computed } = Vue;
+
+      createApp({
+        setup() {
+          const movie = ref(null);
+          const loading = ref(false);
+          const id = window.location.search.replace("?id=", "");
+
+          async function getMovie() {
+            loading.value = true;
+            const { data } = await client
+              .from("cinema")
+              .select("*, posters(*), links(*), subtitles(*)")
+              .eq("id", id)
+              .single();
+            movie.value = data;
+            loading.value = false;
+          }
+
+          onMounted(async () => {
+            getMovie();
+          });
+
+          const logo = computed(() => {
+            try {
+              return movie.value.posters.find((p) => p.type === "logo").url;
+            } catch {
+              return null;
+            }
+          });
+
+          const releaseDate = computed(() => {
+            try {
+              return movie.value.posters.find((p) => p.type === "release_date")
+                .url;
+            } catch {
+              return null;
+            }
+          });
+
+          function getFavicon(url) {
+            try {
+              const uri = new URL(url).origin;
+              return `https://t2.gstatic.com/faviconV2?client=SOCIAL&type=FAVICON&fallback_opts=TYPE,SIZE,URL&url=${uri}&size=16`;
+            } catch {
+              return null;
+            }
+          }
+
+          function openLink(movie) {
+            const url = resolveVideo(movie);
+            if (!url) return;
+            window.location.href = url;
+          }
+
+          function resolveVideo(video) {
+            if (!video.video_url) return;
+
+            const url =
+              (video.video_url.startsWith("/") ? window.location.href : "") +
+              video.video_url;
+
+            const uri = new URL(url);
+            const _url = `${uri.origin}${uri.pathname}`;
+
+            if (url.includes(".m3u")) {
+              if (navigator.userAgent.includes("iPhone")) {
+                return url;
+              }
+
+              return `/player.html?s=${_url}`;
+            }
+
+            if (url.includes("dashtype") || url.includes(".mpd")) {
+              return `/dash.html?s=${_url}`;
+            }
+
+            if (url.includes(".mp4")) {
+              return `https://www.hlsplayer.net/embed?type=mp4&src=${_url}`;
+            }
+
+            return url;
+          }
+
+          return {
+            movie,
+            logo,
+            releaseDate,
+            getFavicon,
+            openLink,
+            loading,
+          };
+        },
+      }).mount("#app");
+    </script>
+  </body>
+</html>

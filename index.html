@@ -143,14 +143,15 @@
         style="grid-template-columns: repeat(auto-fill, minmax(150px, 1fr))"
       >
         <div class="card" v-for="movie in filteredMovies" :key="movie.id">
-          <img
-            class="card-img-top"
-            :src="movie.image"
-            :role="movie.video_url ? 'button':''"
-            :style="{'filter': (movie.video_url || movie.links.length) ? '':'grayscale(1) opacity(.75)'}"
-            @click="openLink(movie)"
-            @contextmenu.prevent="showContext($event, movie)"
-          />
+          <a :href="`/movie.html?id=${movie.id}`">
+            <img
+              class="card-img-top"
+              :src="movie.image"
+              :role="movie.video_url ? 'button':''"
+              :style="{'filter': (movie.video_url || movie.links.length) ? '':'grayscale(1) opacity(.75)'}"
+              @contextmenu.prevent="showContext($event, movie)"
+            />
+          </a>
           <span
             v-if="movie.content_rating"
             class="position-absolute top-0 start-0 badge bg-danger text-white shadow mt-2 ms-2"
