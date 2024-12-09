@@ -59,6 +59,7 @@ async function scanMoveek(url) {
     genres,
     english: englishName.join("-").trim(),
     image,
+    synopsis: $(".text-justify").first().text(),
   };
 
   try {
