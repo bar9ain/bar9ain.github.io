@@ -78,7 +78,7 @@
             </div>
 
             <div class="text-xs font-semibold relative text-center mt-4">
-              {{movie.english}} · {{movie.year}}
+              {{ [movie.english, movie.year].filter(x=>x).join(' · ') }}
             </div>
 
             <div
