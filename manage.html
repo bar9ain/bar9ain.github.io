@@ -413,8 +413,8 @@
                         release_date: data.release_date || movie.release_date,
                         content_rating:
                           data.content_rating || movie.content_rating,
-                        trailer_id: data.trailer_id || movie.trailer_id,
-                        synopsis: data.synopsis || movie.synopsis,
+                        trailer_id: movie.trailer_id || data.trailer_id,
+                        synopsis: movie.synopsis || data.synopsis,
                       };
 
                       payload.romanized = [
