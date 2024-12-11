@@ -51,7 +51,7 @@
 
       <div
         v-if="movie"
-        :style="{ '--bg-image': `url('${thumbnail || movie.image}')` }"
+        :style="{ '--bg-image': `url('${thumbnail || hdPoster || movie.image}')` }"
       >
         <div
           class="relative w-100 max-h-[85vh] h-[calc(144vw_/_.65)] bg-black bg-[image:var(--bg-image)] bg-cover bg-center"
@@ -248,6 +248,14 @@
             }
           });
 
+          const hdPoster = computed(() => {
+            try {
+              return movie.value.posters.find((p) => p.type === "main").url;
+            } catch {
+              return null;
+            }
+          });
+
           const logo = computed(() => {
             try {
               return movie.value.posters.find((p) => p.type === "logo").url;
@@ -314,6 +322,7 @@
             logo,
             releaseDate,
             thumbnail,
+            hdPoster,
             getFavicon,
             openLink,
             loading,
