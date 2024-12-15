@@ -1242,12 +1242,25 @@ video {
     top: unset;
   }
 
+  .md\:order-first {
+    order: -9999;
+  }
+
+  .md\:mx-0 {
+    margin-left: 0px;
+    margin-right: 0px;
+  }
+
   .md\:ml-0 {
     margin-left: 0px;
   }
 
   .md\:ml-auto {
     margin-left: auto;
+  }
+
+  .md\:mr-0 {
+    margin-right: 0px;
   }
 
   .md\:block {
