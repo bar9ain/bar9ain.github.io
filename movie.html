@@ -52,7 +52,7 @@
       <div
         v-if="movie"
         :style="{
-          '--bg-image': `url('${thumbnail || hdPoster || movie.image}')`,
+          '--bg-image': `url('${thumbnail || backdrop || hdPoster || movie.image}')`,
           '--bg-image-xl': `url('${backdrop || hdPoster}')`
         }"
       >
