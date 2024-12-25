@@ -306,7 +306,9 @@
           }
 
           function openLink(movie) {
-            window.location.href = `https://vcine.netlify.app/player/${movie.id}`;
+            const url = resolveVideo(movie);
+            if (!url) return;
+            window.location.href = url;
           }
 
           function resolveVideo(video) {
@@ -354,7 +356,7 @@
             getFavicon,
             openLink,
             loading,
-            formatDate,
+            formatDate
           };
         },
       }).mount("#app");
