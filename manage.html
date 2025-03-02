@@ -408,7 +408,7 @@
                       const payload = {
                         title: data.title,
                         english: movie.english || data.english,
-                        image: data.image,
+                        image: movie.image || data.image,
                         genres: movie.genres || data.genres,
                         release_date: data.release_date || movie.release_date,
                         content_rating:
