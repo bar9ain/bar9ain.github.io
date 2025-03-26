@@ -77,7 +77,7 @@
         </div>
       </div>
       <div
-        class="container d-flex align-items-center p-3 justify-content-center border-bottom"
+        class="d-flex align-items-center p-3 justify-content-center border-bottom"
       >
         <div class="d-flex w-100 align-items-center gap-2">
           <input
@@ -129,7 +129,7 @@
         </div>
       </div>
 
-      <div class="container p-3">
+      <div class="p-3">
         <table class="table table-bordered bg-white small">
           <thead>
             <tr>
@@ -139,16 +139,20 @@
               <th class="text-center">HD</th>
               <th class="text-center">Torrent</th>
               <th class="text-center">Fshare</th>
+              <th width="70"></th>
             </tr>
           </thead>
           <tbody>
             <tr
               v-for="movie in movies"
-              :class="(movie.video_url || movie.links.length) ? '': 'bg-light'"
+              :class="(movie.sources.length || movie.links.length) ? '': 'bg-light'"
             >
               <td class="text-truncate">{{ movie.release_date }}</td>
               <td @dblclick="editMovie(movie)">
-                <a :href="movie.moveek_url" target="_blank">
+                <a
+                  :href="`https://vcine.netlify.app/admin/movies/${movie.id}`"
+                  target="_blank"
+                >
                   {{ movie.title}}
                 </a>
                 <span
@@ -190,21 +194,28 @@
               </td>
               <td
                 width="70"
-                class="text-center text-white h5 align-middle"
-                :class="movie.video_url ? 'bg-success':''"
+                class="text-center text-white h6 align-middle"
+                :class="movie.sources.length ? 'bg-success':''"
               >
-                <template v-if="movie.video_url">
-                  {{ movie.video_url.endsWith("raw") ? "RAW" :
-                  movie.video_url.includes("netflix.com") ? "NF":"" }}
+                <template v-if="movie.sources.length">{{movie.status}}</template>
+                <template v-else-if="movie.imdb">
+                  <a
+                    :href="`https://vidsrc.net/embed/movie/${movie.imdb}/`"
+                    target="_blank"
+                    class="text-decoration-none"
+                  >
+                    <i class="fi fi-br-search text-primary"></i>
+                  </a>
+                  <a
+                    :href="`https://www.kpkuang.org?imdb=${movie.imdb}`"
+                    target="_blank"
+                  >
+                    <img
+                      src="https://www.kpkuang.org/upload/site/20190711-1/50134c0bcfeae96636fcef662b77a995.png"
+                      height="12"
+                    />
+                  </a>
                 </template>
-                <a
-                  v-else-if="movie.imdb"
-                  :href="`https://vidsrc.net/embed/movie/${movie.imdb}/`"
-                  target="_blank"
-                  class="text-decoration-none"
-                >
-                  <i class="fi fi-br-search text-primary"></i>
-                </a>
               </td>
               <td
                 width="70"
@@ -219,6 +230,22 @@
                 width="70"
                 :class="movie.links.some(x=>x.url.includes('fshare.vn')) ? 'bg-success':''"
               ></td>
+              <td>
+                <button
+                  type="button"
+                  class="btn btn-link btn-sm text-warning"
+                  @click.prevent="hideMovie(movie)"
+                >
+                  &euml;
+                </button>
+                <button
+                  type="button"
+                  class="btn btn-link btn-sm text-danger"
+                  @click.prevent="deleteMovie(movie)"
+                >
+                  &times;
+                </button>
+              </td>
             </tr>
           </tbody>
         </table>
@@ -258,7 +285,8 @@
 
             const result = await client
               .from("cinema")
-              .select("*, links (id, url, label)")
+              .select("*, links (id, url, label), sources (id, url)")
+              .not("moveek_url", "is", null)
               .eq("hidden", false)
               .gt("release_date", firstDay)
               .lte("release_date", lastDay)
@@ -451,6 +479,39 @@
             progress.value = 0;
           }
 
+          async function hideMovie(movie) {
+            try {
+              const confirm = window.confirm("Are you sure?");
+              if (!confirm) return;
+
+              await client
+                .from("cinema")
+                .update({ hidden: true })
+                .eq("id", movie.id);
+              await fetchMovies();
+            } catch (e) {
+              alert(e.message);
+            }
+          }
+
+          async function deleteMovie(movie) {
+            try {
+              const confirm = window.confirm("Are you sure?");
+              if (!confirm) return;
+
+              const { error } = await client
+                .from("cinema")
+                .delete()
+                .eq("id", movie.id);
+
+              if (error) throw new Error(error.message || error.details);
+
+              await fetchMovies();
+            } catch (e) {
+              alert(e.message);
+            }
+          }
+
           onMounted(async () => {
             fetchMovies();
             window.addEventListener("keyup", (e) => {
@@ -482,6 +543,8 @@
             editMovie,
             updateScore,
             updateMoveek,
+            hideMovie,
+            deleteMovie,
           };
         },
       }).mount("#app");
