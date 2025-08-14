@@ -197,7 +197,9 @@
                 class="text-center text-white h6 align-middle"
                 :class="movie.sources.length ? 'bg-success':''"
               >
-                <template v-if="movie.sources.length">{{movie.status}}</template>
+                <template v-if="movie.sources.length"
+                  >{{movie.status}}</template
+                >
                 <template v-else-if="movie.imdb">
                   <a
                     :href="`https://vidsrc.net/embed/movie/${movie.imdb}/`"
@@ -309,8 +311,8 @@
             try {
               loading.value = true;
               const torrents = (await scanTorrents()) || [];
-              const subs = (await scanSubs()) || [];
-              if (torrents.concat(subs).length) alert(torrents.concat(subs));
+              // const subs = (await scanSubs()) || [];
+              if (torrents.length) alert(torrents);
               else alert("Updated nothing!");
               await fetchMovies();
             } catch (e) {
@@ -366,8 +368,9 @@
                         throw new Error(error.message || error.details);
 
                       const payload = {
-                        english: data.english,
-                        original_title: data.original_title,
+                        english: movie.english || data.english,
+                        original_title:
+                          movie.original_title || data.original_title,
                         rate: data.rate,
                         genres: movie.genres || data.genre,
                         countries: data.countries?.length
