@@ -117,12 +117,16 @@
         class="d-flex align-items-center p-3 justify-content-center border-bottom"
       >
         <div class="d-flex w-100 align-items-center gap-2">
-          <input
-            v-model="month"
-            type="month"
-            class="form-control me-2 w-auto"
-            @change="fetchMovies"
-          />
+          <div class="d-flex align-items-center">
+            <button class="btn bg-white" @click="prevMonth">&lt;</button>
+            <input
+              v-model="month"
+              type="month"
+              class="form-control mx-2 w-auto"
+              @change="fetchMovies"
+            />
+            <button class="btn bg-white" @click="nextMonth">&gt;</button>
+          </div>
           <button
             type="button"
             class="btn btn-warning text-truncate small ms-auto"
@@ -664,6 +668,20 @@
             }
           }
 
+          function prevMonth() {
+            const currentMonth = new Date(month.value);
+            currentMonth.setMonth(currentMonth.getMonth() - 1);
+            month.value = currentMonth.toISOString().substr(0, 7);
+            fetchMovies();
+          }
+
+          function nextMonth() {
+            const currentMonth = new Date(month.value);
+            currentMonth.setMonth(currentMonth.getMonth() + 1);
+            month.value = currentMonth.toISOString().substr(0, 7);
+            fetchMovies();
+          }
+
           onMounted(async () => {
             fetchMovies();
             window.addEventListener("keyup", (e) => {
@@ -698,6 +716,8 @@
             hideMovie,
             deleteMovie,
             submitVote,
+            prevMonth,
+            nextMonth,
           };
         },
       }).mount("#app");
