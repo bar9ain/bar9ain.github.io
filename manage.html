@@ -28,6 +28,10 @@
       rel="stylesheet"
       href="https://cdn-uicons.flaticon.com/uicons-bold-rounded/css/uicons-bold-rounded.css"
     />
+    <link
+      rel="stylesheet"
+      href="https://cdn-uicons.flaticon.com/uicons-solid-straight/css/uicons-solid-straight.css"
+    />
 
     <style>
       #app {
@@ -54,6 +58,39 @@
 
       .bg-light {
         background: #ececec !important;
+      }
+
+      .group-reactions {
+        position: relative;
+      }
+
+      .group-reactions-list {
+        display: none;
+        gap: 8px;
+        font-size: 18px;
+        line-height: 18px;
+        color: gray;
+        background: white;
+        align-items: center;
+        padding: 8px;
+        border-radius: 8px;
+        position: absolute;
+        box-shadow: 0 0 8px rgba(0, 0, 0, 0.2);
+        left: 50%;
+        transform: translateX(-50%);
+        bottom: 50%;
+      }
+
+      .group-reactions:hover .group-reactions-list {
+        display: flex;
+      }
+
+      .opacity-50 {
+        opacity: 0.5;
+      }
+
+      .text-brown {
+        color: #8b4513;
       }
     </style>
   </head>
@@ -149,36 +186,118 @@
             >
               <td class="text-truncate">{{ movie.release_date }}</td>
               <td @dblclick="editMovie(movie)">
-                <a
-                  :href="`https://vcine.netlify.app/admin/movies/${movie.id}`"
-                  target="_blank"
+                <div
+                  class="d-flex justify-content-between align-items-center gap-4"
                 >
-                  {{ movie.title}}
-                </a>
-                <span
-                  v-if="movie.rate"
-                  class="badge rounded-pill bg-warning text-dark ms-1"
-                >
-                  {{movie.rate}}
-                </span>
-                <span
-                  v-if="movie.content_rating"
-                  class="badge bg-dark text-white ms-1"
-                >
-                  {{movie.content_rating}}
-                </span>
-                <div class="d-flex small text-muted align-items-start">
-                  <img
-                    v-for="country in movie.countries"
-                    :key="country.code"
-                    :src="`https://flagsapi.com/${country.code}/shiny/16.png`"
-                    class="me-1"
-                    :title="country.name"
-                  />
                   <div>
-                    <div>{{movie.english}} ({{movie.year}})</div>
-                    <div v-if="movie.original_title != movie.english">
-                      {{movie.original_title}}
+                    <a
+                      :href="`https://vcine.netlify.app/admin/movies/${movie.id}`"
+                      target="_blank"
+                    >
+                      {{ movie.title}}
+                    </a>
+                    <span
+                      v-if="movie.rate"
+                      class="badge rounded-pill bg-warning text-dark ms-1"
+                    >
+                      {{movie.rate}}
+                    </span>
+                    <span
+                      v-if="movie.content_rating"
+                      class="badge bg-dark text-white ms-1"
+                    >
+                      {{movie.content_rating}}
+                    </span>
+                    <div class="d-flex small text-muted align-items-start">
+                      <img
+                        v-for="country in movie.countries"
+                        :key="country.code"
+                        :src="`https://flagsapi.com/${country.code}/shiny/16.png`"
+                        class="me-1"
+                        :title="country.name"
+                      />
+                      <div>
+                        <div>{{movie.english}} ({{movie.year}})</div>
+                        <div v-if="movie.original_title != movie.english">
+                          {{movie.original_title}}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div class="group-reactions" role="button">
+                    <span class="h5">
+                      <i
+                        v-if="!movie.user_vote"
+                        class="fi fi-rr-social-network text-muted opacity-50"
+                      ></i>
+                      <i
+                        v-if="movie.user_vote == 1"
+                        class="fi fi-ss-poop text-brown"
+                      ></i>
+                      <i
+                        v-if="movie.user_vote == 2"
+                        class="fi fi-sr-thumbs-down text-warning"
+                      ></i>
+                      <i
+                        v-if="movie.user_vote == 3"
+                        class="fi fi-sr-meh-blank text-info"
+                      ></i>
+                      <i
+                        v-if="movie.user_vote == 4"
+                        class="fi fi-sr-thumbs-up text-primary"
+                      ></i>
+                      <i
+                        v-if="movie.user_vote == 5"
+                        class="fi fi-sr-heart text-danger"
+                      ></i>
+                    </span>
+                    <div class="group-reactions-list">
+                      <i
+                        v-if="movie.user_vote == 1"
+                        class="fi fi-ss-poop text-brown"
+                      ></i>
+                      <i
+                        v-else
+                        class="fi fi-rr-poop"
+                        @click="submitVote(movie.id, 1)"
+                      ></i>
+                      <i
+                        v-if="movie.user_vote == 2"
+                        class="fi fi-sr-thumbs-down text-warning"
+                      ></i>
+                      <i
+                        v-else
+                        class="fi fi-rr-hand"
+                        @click="submitVote(movie.id, 2)"
+                      ></i>
+                      <i
+                        v-if="movie.user_vote == 3"
+                        class="fi fi-sr-meh-blank text-info"
+                      ></i>
+                      <i
+                        v-else
+                        class="fi fi-rr-meh-blank"
+                        @click="submitVote(movie.id, 3)"
+                      ></i>
+                      <i
+                        v-if="movie.user_vote == 4"
+                        class="fi fi-sr-thumbs-up text-primary"
+                      ></i>
+                      <i
+                        v-else
+                        class="fi fi-rr-social-network"
+                        @click="submitVote(movie.id, 4)"
+                      ></i>
+                      <i
+                        v-if="movie.user_vote == 5"
+                        class="fi fi-sr-heart text-danger"
+                      ></i>
+                      <i
+                        v-else
+                        class="fi fi-rr-heart"
+                        @click="submitVote(movie.id, 5)"
+                      ></i>
                     </div>
                   </div>
                 </div>
@@ -285,9 +404,14 @@
               .toISOString()
               .substr(0, 10);
 
+            const { data } = await client.auth.getUser();
+            const userId = data.user.id;
+
             const result = await client
               .from("cinema")
-              .select("*, links (id, url, label), sources (id, url)")
+              .select(
+                "*, links (id, url, label), sources (id, url), votes (user_id, point)"
+              )
               .not("moveek_url", "is", null)
               .eq("hidden", false)
               .gt("release_date", firstDay)
@@ -295,7 +419,13 @@
               .order("release_date")
               .order("id", { ascending: false });
 
-            movies.value = result.data;
+            movies.value = result.data.map((movie) => {
+              movie.votes = movie.votes || [];
+              movie.user_vote = movie.votes.find(
+                (x) => x.user_id === userId
+              )?.point;
+              return movie;
+            });
             loading.value = false;
           }
 
@@ -515,6 +645,25 @@
             }
           }
 
+          async function submitVote(movieId, point) {
+            try {
+              const { data } = await client.auth.getUser();
+              const userId = data.user.id;
+
+              await client
+                .from("votes")
+                .upsert(
+                  { user_id: userId, movie_id: movieId, point },
+                  { onConflict: "movie_id,user_id" }
+                )
+                .eq("movie_id", movieId);
+
+              await fetchMovies();
+            } catch (e) {
+              alert(e.message);
+            }
+          }
+
           onMounted(async () => {
             fetchMovies();
             window.addEventListener("keyup", (e) => {
@@ -548,6 +697,7 @@
             updateMoveek,
             hideMovie,
             deleteMovie,
+            submitVote,
           };
         },
       }).mount("#app");
